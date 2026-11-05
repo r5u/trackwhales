@@ -174,6 +174,8 @@
           <span id="cardGraphHint">Waiting for readings</span>
         </div>
       </section>`;
+    window.TrackwhalesEffects?.mount({compact:true});
+    const levelWatcher = window.TrackwhalesLevelUp?.create({celebrate:()=>window.TrackwhalesEffects?.celebrate(),now});
     const q = (id) => document.querySelector(id);
     function render() {
       let state = {};
@@ -193,6 +195,7 @@
       q("#cardMpPotionCost").textContent = compact(potionCosts.mp);
       q("#cardMesoRate").textContent = mesoMetrics(state, time).rate;
       const m = metrics(state, time, required, totalExp);
+      levelWatcher?.update(state, Boolean(state.running) && time-(state.updatedAt||0)<90000);
       q("#cardLevel").textContent = m.level;
       q("#cardRate").textContent = m.rate;
       q("#cardPercent").textContent = m.percent.toFixed(2) + "%";
