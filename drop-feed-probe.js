@@ -116,7 +116,9 @@
           const quantity = Number(item[2].replace(/[Il|]/g, "1").replace(/[Oo]/g, "0")),
             category = canonicalItemCategory(item[3]);
           if (quantity < 1 || !category) return null;
-          return `${item[1].replace(/\s+/g, " ").trim()} x${quantity} (${category})`;
+          const rawName = item[1].replace(/\s+/g, " ").trim();
+          const match = category === "Etc" ? globalThis.MapleEtcCatalog?.resolve?.(rawName) : null;
+          return `${match?.name || rawName} x${quantity} (${category})`;
         }
         return null;
       })
