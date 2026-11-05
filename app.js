@@ -135,6 +135,10 @@
         storage,
         getCapture: () => capture,
       });
+      const characterNameReader = window.MapleCharacterName?.create({
+        document, localOcr,
+        onName: (name) => { session.state.characterName = name; session.save(); view.update(); },
+      });
       capture = Capture.create({
         navigator,
         video: q("#sharePreview"),
@@ -145,8 +149,8 @@
         view,
         debugTools,
         debug,
-        onFrame: items.process,
-        onInvalidate: items.invalidate,
+        onFrame: (frame, t, cancelled) => Promise.all([items.process(frame, t, cancelled), characterNameReader?.process(frame, t, cancelled)]),
+        onInvalidate: () => { items.invalidate(); characterNameReader?.reset(); session.state.characterName = null; },
         timers: {
           setTimeout: window.setTimeout.bind(window),
           setInterval: window.setInterval.bind(window),
