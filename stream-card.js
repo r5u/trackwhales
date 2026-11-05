@@ -144,7 +144,7 @@
     document.body.classList.add("stream-card");
     document.querySelector(".app").innerHTML = `
       <section class="stream-panel" aria-label="trackwhales live stream card">
-        <header><span class="stream-brand"><svg width="23" height="23" viewBox="0 0 40 40" aria-hidden="true"><path fill="currentColor" d="M7 19c0-5 4-8 10-8 7 0 11 5 11 11 3 0 5-2 6-5 2 5 0 11-5 13-3 2-7 3-11 2C10 31 5 27 5 22c0-1 1-2 2-3Zm24 3c-1-5 1-9 6-10 0 5-1 8-6 10Z"/><circle cx="12" cy="19" r="1.5" fill="#181825"/></svg>trackwhales</span><span id="cardStatus">CONNECTING</span></header>
+        <header><span class="stream-brand"><svg width="23" height="23" viewBox="0 0 40 40" aria-hidden="true"><path fill="currentColor" d="M7 19c0-5 4-8 10-8 7 0 11 5 11 11 3 0 5-2 6-5 2 5 0 11-5 13-3 2-7 3-11 2C10 31 5 27 5 22c0-1 1-2 2-3Zm24 3c-1-5 1-9 6-10 0 5-1 8-6 10Z"/><circle cx="12" cy="19" r="1.5" fill="var(--panel)"/></svg>trackwhales</span><span id="cardStatus">CONNECTING</span></header>
         <div class="stream-values">
           <div><span>Level</span><strong id="cardLevel">—</strong></div>
           <div><span>EXP / hour</span><strong id="cardRate">—</strong></div>
@@ -161,15 +161,15 @@
         <div class="stream-chart">
           <div class="stream-chart-label"><span>EXP / 30 sec</span><span id="cardGraphPeak">—</span></div>
           <svg class="stream-exp-svg" viewBox="0 0 342 92" role="img" aria-label="EXP gained per thirty seconds over the last five minutes">
-            <defs><linearGradient id="streamExpFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f5c2e7" stop-opacity=".22"/><stop offset="100%" stop-color="#f5c2e7" stop-opacity="0"/></linearGradient></defs><g fill="#a6adc8" font-size="8" font-family="Inter, Segoe UI, sans-serif" text-anchor="end">
+            <defs><linearGradient id="streamExpFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--pink)" stop-opacity=".22"/><stop offset="100%" stop-color="var(--pink)" stop-opacity="0"/></linearGradient></defs><g fill="var(--muted)" font-size="8" font-family="Inter, Segoe UI, sans-serif" text-anchor="end">
               <text id="cardAxisTop" x="35" y="9">1</text><text id="cardAxisMid" x="35" y="40">0.5</text><text x="35" y="71">0</text>
             </g>
             <g transform="translate(42 0)">
-              <path d="M0,6H300M0,37H300M0,68H300M0,6V68" stroke="#313244" stroke-opacity=".65" stroke-width="0.6" fill="none"/>
-              <path id="cardGraphArea" fill="url(#streamExpFill)" stroke="none"/><path id="cardGraph" fill="none" stroke="#f5c2e7" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
-              <circle id="cardGraphDot" r="2.6" fill="#f5c2e7" stroke="#181825" stroke-width="1.5" visibility="hidden"/>
+              <path d="M0,6H300M0,37H300M0,68H300M0,6V68" stroke="var(--surface0)" stroke-opacity=".65" stroke-width="0.6" fill="none"/>
+              <path id="cardGraphArea" fill="url(#streamExpFill)" stroke="none"/><path id="cardGraph" fill="none" stroke="var(--pink)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+              <circle id="cardGraphDot" r="2.6" fill="var(--pink)" stroke="var(--panel)" stroke-width="1.5" visibility="hidden"/>
             </g>
-            <g fill="#7f849c" font-size="8"><text x="42" y="88">5 min ago</text><text x="342" y="88" text-anchor="end">Now</text></g>
+            <g fill="var(--overlay1)" font-size="8"><text x="42" y="88">5 min ago</text><text x="342" y="88" text-anchor="end">Now</text></g>
           </svg>
           <span id="cardGraphHint">Waiting for readings</span>
         </div>
