@@ -430,7 +430,7 @@
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const colors = { level: "#c7f36b", exp: "#a995ff", meso: "#ffd479" };
+      const colors = { level: "var(--pink)", exp: "var(--mauve)", meso: "var(--yellow)" };
       const regions = currentRegions(img);
       for (const name of debug ? ["level", "exp", "meso"] : ["meso"]) {
         const r = name === "meso" ? state.mesoRegion : regions[name];
