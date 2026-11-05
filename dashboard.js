@@ -165,6 +165,8 @@
       q("#shareGameBtn").classList.toggle("hidden", !!captureStream);
       q("#stopSharingBtn").classList.toggle("hidden", !captureStream);
       q("#sharePreview").classList.toggle("hidden", !captureStream);
+      const characterHeading = q("#characterNameHeading");
+      if (characterHeading) characterHeading.textContent = captureStream && state.characterName ? state.characterName : "Current character";
       const stage = q("#captureStage");
       if (stage) stage.hidden = !captureStream;
       const recent = q("#recentCaptures");
