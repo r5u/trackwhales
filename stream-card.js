@@ -140,10 +140,10 @@
     totalExp,
     now = Date.now,
   }) {
-    document.title = "trackwhales · Stream card";
+    document.title = "trackwhales · Compact view";
     document.body.classList.add("stream-card");
     document.querySelector(".app").innerHTML = `
-      <section class="stream-panel" aria-label="trackwhales live stream card">
+      <section class="stream-panel" aria-label="trackwhales compact view">
         <header><span class="stream-brand"><svg width="23" height="23" viewBox="0 0 40 40" aria-hidden="true"><path fill="currentColor" d="M7 19c0-5 4-8 10-8 7 0 11 5 11 11 3 0 5-2 6-5 2 5 0 11-5 13-3 2-7 3-11 2C10 31 5 27 5 22c0-1 1-2 2-3Zm24 3c-1-5 1-9 6-10 0 5-1 8-6 10Z"/><circle cx="12" cy="19" r="1.5" fill="var(--panel)"/></svg>trackwhales</span><span id="cardStatus">CONNECTING</span></header>
         <div class="stream-values">
           <div><span>Level</span><strong id="cardLevel">—</strong></div>
