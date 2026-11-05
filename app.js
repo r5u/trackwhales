@@ -204,7 +204,7 @@
         if (card) card.focus();
         else
           view.notice(
-            "Allow popups for Maple Track, then click Open stream card again.",
+            "Allow popups for Maple Track, then click Open compact view again.",
           );
       });
       view.bindCalibration();
