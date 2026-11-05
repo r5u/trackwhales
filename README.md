@@ -2,11 +2,6 @@
 
 MapleStory Classic EXP and drop-value tracker, with a Catppuccin Mocha interface and pink accents.
 
-## Hosting
-
-This folder is ready for GitHub Pages. Publish the `main` branch from `/ (root)` in repository Settings → Pages. No build step is needed. Keep `.nojekyll` and all asset folders.
-
-Open the site in a desktop browser, choose Share game window, and select MapleStory. Screen recognition runs in the browser. The stream card opens from the main tracker.
 
 ## Credits
 
