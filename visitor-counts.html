@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><title>Visitor count</title>
+<b id="online">—</b>
+<script src="https://meusonline.com/tracker.js" data-site="r5u4b7f7b70" data-online="#online" async></script>
+<script>
+// This page runs in an opaque-origin sandbox without access to the tracker.
+async function refresh(){let online=null,total=null;try{const response=await fetch('https://meusonline.com/api.php?site=r5u4b7f7b70',{signal:AbortSignal.timeout(8000)});if(!response.ok)throw Error();const data=await response.json();online=data.online;total=data.total}catch{const n=Number(document.getElementById('online').textContent);if(Number.isSafeInteger(n))online=n}parent.postMessage({type:'trackwhales-counts',online,total},'*')}
+setTimeout(refresh,2000);setInterval(refresh,30000);
+</script>
