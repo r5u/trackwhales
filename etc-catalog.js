@@ -4,5 +4,13 @@
 const normalize=name=>String(name||'').normalize('NFKC').toLowerCase().replace(/[^a-z0-9]/g,'');
 const index=new Map();for(const item of items){const key=normalize(item.name);if(!index.has(key))index.set(key,[]);index.get(key).push(item)}
 function find(name){const hits=index.get(normalize(name))||[];if(!hits.length)return null;const prices=new Set(hits.map(i=>i.price));const ambiguous=prices.size>1;return{name:hits[0].name,price:ambiguous?null:hits[0].price,url:'https://meowdb.com/msclassic/item-db/'+hits[0].id,ambiguous,matches:hits.length};}
-root.MapleEtcCatalog={items,normalize,find,checked:'2026-11-05',source:'https://meowdb.com/msclassic/item-db/etc'};
+
+function edits(a,b){let prev=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){const row=[i];for(let j=1;j<=b.length;j++)row[j]=Math.min(row[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));prev=row}return prev[b.length]}
+function resolve(raw){const input=normalize(raw);const direct=find(raw);if(direct)return direct;let best=null,runner=Infinity;
+ for(const [key,hits] of index){if(key.length<6)continue;let score=Infinity;for(let size=Math.max(6,key.length-3);size<=key.length+3&&size<=input.length;size++){const suffix=input.slice(-size);score=Math.min(score,edits(suffix,key)/key.length)}
+ if(score>.30)continue;const match=find(hits[0].name);if(!best||score<best.score){if(best)runner=best.score;best={...match,score}}else if(score<runner)runner=score;
+ }
+ if(!best||runner-best.score<.08)return null;return best;
+}
+root.MapleEtcCatalog={items,normalize,find,resolve,checked:'2026-11-05',source:'https://meowdb.com/msclassic/item-db/etc'};
 })(typeof window==='undefined'?globalThis:window);
