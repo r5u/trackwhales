@@ -20,13 +20,14 @@
   }) {
     const FULL_SCAN_INTERVAL_MS = 10000,
       MAP_HEADER_POLL_INTERVAL_MS = 2000,
-      DROP_FEED_POLL_INTERVAL_MS = 100,
+      DROP_FEED_POLL_INTERVAL_MS = 1000,
       DROP_FEED_SCALE = 0.5,
       // Keep enough of the lower-right HUD to include the full pickup sentence
       // and its category tag, even in a narrow game window. OCR still runs only
       // after the low-resolution probe sees a stable visual change.
       DROP_FEED_REGION = { x: 0.58, y: 0.68, w: 0.42, h: 0.32 },
       MAP_PROBE_SCALE = 0.5;
+    let inventoryCanvas = null;
     let stream = null,
       timer = null,
       mapTimer = null,
@@ -269,6 +270,13 @@
         video.currentTime === lastDropVideoTime
       ) return;
       lastDropVideoTime = video.currentTime;
+      if (globalThis.TrackwhalesLoot?.isAutomatic?.() && globalThis.MapleGoldInventory) {
+        try { if (!inventoryCanvas) inventoryCanvas = document.createElement("canvas");
+          inventoryCanvas.width = video.videoWidth; inventoryCanvas.height = video.videoHeight;
+          inventoryCanvas.getContext("2d").drawImage(video,0,0);
+          globalThis.MapleGoldInventory.process(inventoryCanvas, now());
+        } catch { /* Inventory recognition never blocks notification OCR. */ }
+      }
       const sourceX = Math.round(video.videoWidth * DROP_FEED_REGION.x),
         sourceY = Math.round(video.videoHeight * DROP_FEED_REGION.y),
         sourceWidth = Math.max(
@@ -312,7 +320,8 @@
       } catch {
         return;
       }
-      if (!reader.observeDropProbe(probe)) return;
+      const changed = reader.observeDropProbe(probe);
+      if (!changed && !globalThis.TrackwhalesLoot?.isAutomatic?.()) return;
       if (!dropImageCanvas) dropImageCanvas = document.createElement("canvas");
       if (
         dropImageCanvas.width !== sourceWidth ||
