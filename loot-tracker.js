@@ -3,7 +3,7 @@
 const KEY='trackwhales-loot-v1',catalog=window.MapleEtcCatalog;let data;
 try{data=JSON.parse(localStorage.getItem(KEY))}catch{}
 if(!data||!Array.isArray(data.events))data={events:[],prices:{},seen:[],since:Date.now()};
-data.prices=data.prices||{};data.seen=data.seen||[];
+data.prices=data.prices||{};data.seen=data.seen||[];data.autoDetect=data.autoDetect!==false;data.autoSince=Number.isFinite(data.autoSince)?data.autoSince:data.since;
 const q=id=>document.getElementById(id),save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch{}};
 const canonical=name=>catalog?.find(name)?.name||name;
 function priceFor(name){const match=catalog?.find(name);const key=Object.keys(data.prices).find(k=>(catalog?.normalize(k)||k)===(catalog?.normalize(name)||name));const override=key!==undefined?data.prices[key]:undefined;const manual=Number.isSafeInteger(override)&&override>=0;return{price:manual?override:match?.price,manual,match};}
@@ -29,11 +29,14 @@ function render(){
 }
 window.TrackwhalesLoot={update(state){
  if(!q('lootRows'))return;let changed=false;
- for(const n of state.dropNotices||[]){const id=JSON.stringify([n.t,n.text,n.map]);if(data.seen.includes(id))continue;data.seen.push(id);changed=true;if(n.t<data.since)continue;const m=n.text.match(/^(.+?) x(\d+) \(([^)]+)\)$/);if(!m)continue;const quantity=Number(m[2]);if(!Number.isSafeInteger(quantity)||quantity<1)continue;data.events.push({name:canonical(m[1].trim()),quantity,t:n.t})}
+ for(const n of state.dropNotices||[]){const id=JSON.stringify([n.t,n.text,n.map]);if(data.seen.includes(id))continue;data.seen.push(id);changed=true;if(n.t<data.since||!data.autoDetect||n.t<data.autoSince)continue;const m=n.text.match(/^(.+?) x(\d+) \(([^)]+)\)$/);if(!m)continue;const quantity=Number(m[2]);if(!Number.isSafeInteger(quantity)||quantity<1)continue;data.events.push({name:canonical(m[1].trim()),quantity,t:n.t})}
  if(changed){data.seen=data.seen.slice(-1000);save()}render();
 }};
 document.addEventListener('DOMContentLoaded',()=>{
  if(!q('lootForm'))return;
+ const auto=q('lootAutoDetect');
+ function showMode(){auto.checked=data.autoDetect;q('lootManual').hidden=data.autoDetect;q('lootModeStatus').textContent=data.autoDetect?'Pickup names, quantities and NPC prices are added automatically.':'Manual mode · add the items you want to value below.';}
+ auto.addEventListener('change',()=>{data.autoDetect=auto.checked;if(data.autoDetect)data.autoSince=Date.now();save();showMode();});showMode();
  const list=q('lootItemNames');if(list&&catalog){for(const name of [...new Set(catalog.items.map(i=>i.name))].sort()){const option=element('option');option.value=name;list.append(option)}}
  const hint=()=>{const info=priceFor(q('lootName').value.trim());q('lootPrice').placeholder=Number.isSafeInteger(info.price)?'Auto: '+info.price.toLocaleString()+' mesos':'Mesos / item';};q('lootName').addEventListener('input',hint);
  q('lootForm').addEventListener('submit',e=>{e.preventDefault();const name=canonical(q('lootName').value.trim()),quantity=Number(q('lootQty').value),raw=q('lootPrice').value,price=Number(raw);if(!name||!Number.isSafeInteger(quantity)||quantity<1||raw!==''&&(!Number.isSafeInteger(price)||price<0))return;if(raw!==''){clearOverride(name);data.prices[name]=price}data.events.push({name,quantity,t:Date.now()});save();q('lootForm').reset();q('lootQty').value=1;hint();render()});
