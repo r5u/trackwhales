@@ -5,7 +5,7 @@ try{data=JSON.parse(localStorage.getItem(KEY))}catch{}
 if(!data||!Array.isArray(data.events))data={events:[],prices:{},seen:[],since:Date.now()};
 data.prices=data.prices||{};data.seen=data.seen||[];data.autoDetect=data.autoDetect!==false;data.autoSince=Number.isFinite(data.autoSince)?data.autoSince:data.since;
 const q=id=>document.getElementById(id),save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch{}};
-const canonical=name=>catalog?.find(name)?.name||name;
+const canonical=name=>(catalog?.find(name)||catalog?.resolve?.(name))?.name||name;
 function priceFor(name){const match=catalog?.find(name);const key=Object.keys(data.prices).find(k=>(catalog?.normalize(k)||k)===(catalog?.normalize(name)||name));const override=key!==undefined?data.prices[key]:undefined;const manual=Number.isSafeInteger(override)&&override>=0;return{price:manual?override:match?.price,manual,match};}
 function element(tag,text){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;}
 function clearOverride(name){for(const k of Object.keys(data.prices))if((catalog?.normalize(k)||k)===(catalog?.normalize(name)||name))delete data.prices[k];}
@@ -27,9 +27,9 @@ function render(){
  q('lootCount').textContent=count.toLocaleString();q('lootTotal').textContent=total.toLocaleString();const elapsed=Date.now()-data.since;
  q('lootRate').textContent=count&&elapsed>=60000?Math.round(total*3600000/elapsed).toLocaleString():'—';q('lootUnpriced').textContent=unpriced?unpriced.toLocaleString()+' items need a sell price':'All items priced';q('lootEmpty').hidden=grouped.size>0;
 }
-window.TrackwhalesLoot={update(state){
+window.TrackwhalesLoot={isAutomatic:()=>data.autoDetect,addInventory(name,quantity,t){data.events.push({name:canonical(name),quantity,t,source:'inventory'});save();render();},update(state){
  if(!q('lootRows'))return;let changed=false;
- for(const n of state.dropNotices||[]){const id=JSON.stringify([n.t,n.text,n.map]);if(data.seen.includes(id))continue;data.seen.push(id);changed=true;if(n.t<data.since||!data.autoDetect||n.t<data.autoSince)continue;const m=n.text.match(/^(.+?) x(\d+) \(([^)]+)\)$/);if(!m)continue;const quantity=Number(m[2]);if(!Number.isSafeInteger(quantity)||quantity<1)continue;data.events.push({name:canonical(m[1].trim()),quantity,t:n.t})}
+ for(const n of state.dropNotices||[]){const id=JSON.stringify([n.t,n.text,n.map]);if(data.seen.includes(id))continue;data.seen.push(id);changed=true;if(n.t<data.since||!data.autoDetect||n.t<data.autoSince)continue;const m=n.text.match(/^(.+?) x(\d+) \(([^)]+)\)$/);if(!m)continue;if(window.MapleGoldInventory?.has(canonical(m[1]),Date.now()))continue;const quantity=Number(m[2]);if(!Number.isSafeInteger(quantity)||quantity<1)continue;data.events.push({name:canonical(m[1].trim()),quantity,t:n.t})}
  if(changed){data.seen=data.seen.slice(-1000);save()}render();
 }};
 document.addEventListener('DOMContentLoaded',()=>{
@@ -40,6 +40,6 @@ document.addEventListener('DOMContentLoaded',()=>{
  const list=q('lootItemNames');if(list&&catalog){for(const name of [...new Set(catalog.items.map(i=>i.name))].sort()){const option=element('option');option.value=name;list.append(option)}}
  const hint=()=>{const info=priceFor(q('lootName').value.trim());q('lootPrice').placeholder=Number.isSafeInteger(info.price)?'Auto: '+info.price.toLocaleString()+' mesos':'Mesos / item';};q('lootName').addEventListener('input',hint);
  q('lootForm').addEventListener('submit',e=>{e.preventDefault();const name=canonical(q('lootName').value.trim()),quantity=Number(q('lootQty').value),raw=q('lootPrice').value,price=Number(raw);if(!name||!Number.isSafeInteger(quantity)||quantity<1||raw!==''&&(!Number.isSafeInteger(price)||price<0))return;if(raw!==''){clearOverride(name);data.prices[name]=price}data.events.push({name,quantity,t:Date.now()});save();q('lootForm').reset();q('lootQty').value=1;hint();render()});
- q('lootReset').addEventListener('click',()=>{if(!confirm('Clear tracked drops? Your sell prices will be kept.'))return;data.events=[];data.since=Date.now();save();render()});render();
+ q('lootReset').addEventListener('click',()=>{if(!confirm('Clear tracked drops? Your sell prices will be kept.'))return;data.events=[];data.since=Date.now();window.MapleGoldInventory?.reset();save();render()});render();
 });
 })();
