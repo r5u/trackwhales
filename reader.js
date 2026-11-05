@@ -62,9 +62,9 @@
       lastDropTextAt = new Map(),
       dropReadActive = false,
       dropReadQueue = [],
-      lastDropReadAt = 0;
-    const DROP_NOTICE_MIN_INTERVAL_MS = 150,
-      DROP_NOTICE_QUEUE_LIMIT = 4;
+      lastDropReadAt = 0, visibleDropKeys = new Set(), emptyDropReads = 0;
+    const DROP_NOTICE_MIN_INTERVAL_MS = 1000,
+      DROP_NOTICE_QUEUE_LIMIT = 1;
     function mapProbeFingerprint(image) {
       const crop = mapNameApi?.cropHeaderText?.(image);
       if (!crop?.data || !crop.width || !crop.height) return null;
@@ -153,6 +153,7 @@
     function resetDropProbe() {
       dropProbe?.reset();
       lastDropTextAt.clear();
+      visibleDropKeys.clear();
       dropReadQueue.length = 0;
       lastDropReadAt = 0;
     }
@@ -223,10 +224,11 @@
                 sessionStartAt !== session.state.startAt,
             );
         }
+        const currentDropKeys = new Set(notices.map(n => n.toLocaleLowerCase()));
         for (const notice of notices) {
           const key = notice.toLocaleLowerCase(),
             previous = lastDropTextAt.get(key);
-          if (previous !== undefined && timestamp - previous < 1200) continue;
+          if (visibleDropKeys.has(key) || previous !== undefined && timestamp - previous < 1200) continue;
           lastDropTextAt.set(key, timestamp);
           if (lastDropTextAt.size > 100)
             for (const [text, at] of lastDropTextAt)
@@ -237,6 +239,8 @@
             noticeConfidence.get(notice),
           );
         }
+        if (notices.length) { visibleDropKeys = currentDropKeys; emptyDropReads = 0; }
+        else if (++emptyDropReads >= 3) visibleDropKeys.clear();
         return notices;
       } catch {
         if (
