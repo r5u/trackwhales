@@ -165,6 +165,10 @@
       q("#shareGameBtn").classList.toggle("hidden", !!captureStream);
       q("#stopSharingBtn").classList.toggle("hidden", !captureStream);
       q("#sharePreview").classList.toggle("hidden", !captureStream);
+      const stage = q("#captureStage");
+      if (stage) stage.hidden = !captureStream;
+      const recent = q("#recentCaptures");
+      if (recent) recent.hidden = !captureStream;
       const downloadFrameButton = q("#downloadCurrentFrame");
       if (downloadFrameButton) downloadFrameButton.disabled = !captureStream;
       const pauseButton = q("#pauseSessionBtn");
