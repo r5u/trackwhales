@@ -1,0 +1,10 @@
+(function(root){'use strict';
+function region(level,width,height){if(!level)return null;const h=level.h*height,x=level.x*width+level.w*width+h*.7,y=level.y*height+h*.48,w=Math.min(h*9.1,width-x),cropH=Math.min(h*1.15,height-y);if(h<5||w<12||cropH<5||x<0||y<0)return null;return{x,y,w,h:cropH};}
+function parse(reading){const text=String(reading?.text||'').trim();return reading?.confidence>=55&&/^[A-Za-z][A-Za-z0-9]{1,11}$/.test(text)?text:null;}
+function create({document,localOcr,onName}){let candidate=null,confirmations=0,lastRead=0,confirmed=false,revision=0;
+function reset(){revision++;candidate=null;confirmations=0;lastRead=0;confirmed=false;}
+async function process(frame,t,cancelled=()=>false){if(cancelled()||!localOcr?.read||confirmed&&t-lastRead<30000)return;const box=region(frame._hudRegions?.level,frame.width,frame.height);if(!box)return;lastRead=t;const run=revision,canvas=document.createElement('canvas');canvas.width=Math.ceil(box.w);canvas.height=Math.ceil(box.h);const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(frame,box.x,box.y,box.w,box.h,0,0,canvas.width,canvas.height);const raw=ctx.getImageData(0,0,canvas.width,canvas.height),scale=4,width=raw.width*scale,height=raw.height*scale,data=new Uint8ClampedArray(width*height*4);for(let y=0;y<height;y++)for(let x=0;x<width;x++){const i=(Math.floor(y/scale)*raw.width+Math.floor(x/scale))*4,j=(y*width+x)*4;const ink=Math.min(raw.data[i],raw.data[i+1],raw.data[i+2])>145;data[j]=data[j+1]=data[j+2]=ink?0:255;data[j+3]=255;}
+try{const result=await localOcr.read({characterNameImage:{width,height,data}});if(cancelled()||run!==revision)return;const name=parse(result?.characterName);if(!name){candidate=null;confirmations=0;return;}if(name===candidate)confirmations++;else{candidate=name;confirmations=1;}if(confirmations>=2){confirmed=true;onName(name);}}catch{/* A name read never interrupts EXP tracking. */}}
+return{process,reset};}
+root.MapleCharacterName={region,parse,create};
+})(typeof window==='undefined'?globalThis:window);
