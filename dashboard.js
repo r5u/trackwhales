@@ -166,6 +166,7 @@
       q("#stopSharingBtn").classList.toggle("hidden", !captureStream);
       q("#sharePreview").classList.toggle("hidden", !captureStream);
       const characterHeading = q("#characterNameHeading");
+      window.TrackwhalesExperience?.update(state, !!captureStream);
       if (characterHeading) characterHeading.textContent = captureStream && state.characterName ? state.characterName : "Current character";
       const stage = q("#captureStage");
       if (stage) stage.hidden = !captureStream;
@@ -335,7 +336,10 @@
       q("#rateHint").textContent = text;
     }
     function draw(ss) {
-      const key =
+      const chartWidth = Math.max(280, q("#chart").clientWidth || 700);
+      q("#chart").setAttribute("viewBox", `0 0 ${chartWidth} 170`);
+      q("#chart").setAttribute("preserveAspectRatio", "xMidYMid meet");
+      const key = chartWidth + ":" +
         ss.length +
         ":" +
         ss[0]?.t +
@@ -351,29 +355,29 @@
       g.innerHTML = "";
       if (ss.length < 2) {
         g.innerHTML =
-          '<text class="empty" x="350" y="88" text-anchor="middle">Your EXP curve will appear after a couple of captures</text>';
+          `<text class="empty" x="${chartWidth/2}" y="88" text-anchor="middle">Your EXP curve will appear after a couple of captures</text>`;
         return;
       }
       let vals = ss.map(totalExp),
         min = Math.min(...vals),
         max = Math.max(...vals);
       if (max === min) max = min + 1;
-      const x = (i) => 30 + (i / (ss.length - 1)) * 650,
+      const x = (i) => 30 + (i / (ss.length - 1)) * (chartWidth - 38),
         y = (v) => 142 - ((v - min) / (max - min)) * 112;
       for (let k = 0; k < 4; k++) {
         let yy = 30 + k * 37;
         g.insertAdjacentHTML(
           "beforeend",
-          `<line class="gridline" x1="30" y1="${yy}" x2="690" y2="${yy}"/>`,
+          `<line class="gridline" x1="30" y1="${yy}" x2="${chartWidth-8}" y2="${yy}"/>`,
         );
       }
       let path = ss
           .map((s, i) => (i ? "L" : "M") + x(i) + " " + y(totalExp(s)))
           .join(" "),
-        area = path + ` L 680 148 L 30 148 Z`;
+        area = path + ` L ${chartWidth-8} 148 L 30 148 Z`;
       g.insertAdjacentHTML(
         "beforeend",
-        `<path class="area" d="${area}"/><path class="line" d="${path}"/><circle class="dot" cx="${x(ss.length - 1)}" cy="${y(vals.at(-1))}" r="4"/><text x="30" y="164">${new Date(ss[0].t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</text><text x="690" y="164" text-anchor="end">${new Date(ss.at(-1).t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</text>`,
+        `<path class="area" d="${area}"/><path class="line" d="${path}"/><circle class="dot" cx="${x(ss.length - 1)}" cy="${y(vals.at(-1))}" r="4"/><text x="30" y="164">${new Date(ss[0].t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</text><text x="${chartWidth-8}" y="164" text-anchor="end">${new Date(ss.at(-1).t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</text>`,
       );
     }
     function drawLog(ss) {
