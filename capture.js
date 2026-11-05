@@ -18,6 +18,7 @@
     now = Date.now,
     timers = { setTimeout, setInterval, clearInterval },
   }) {
+    let refreshMs = 10000, pickupMs = 1000;
     const FULL_SCAN_INTERVAL_MS = 10000,
       MAP_HEADER_POLL_INTERVAL_MS = 2000,
       DROP_FEED_POLL_INTERVAL_MS = 1000,
@@ -422,13 +423,7 @@
         session.state.startAt ||= now();
         view.status("waiting", "Reading your game window…");
         view.update();
-        timer = timers.setInterval(captureFrame, FULL_SCAN_INTERVAL_MS);
-        // The small visual probe only triggers OCR after a stable title change.
-        mapTimer = timers.setInterval(pollMapHeader, MAP_HEADER_POLL_INTERVAL_MS);
-        dropFeedTimer = timers.setInterval(
-          pollDropFeed,
-          DROP_FEED_POLL_INTERVAL_MS,
-        );
+        restartTimers();
         await captureFrame();
       } catch (error) {
         if (pending) stop();
@@ -442,6 +437,19 @@
         connecting = false;
         view.update();
       }
+    }
+    function restartTimers() {
+      [timer,mapTimer,dropFeedTimer].forEach(t=>timers.clearInterval(t));
+      timer=mapTimer=dropFeedTimer=null;
+      if (!stream) return;
+      timer=timers.setInterval(captureFrame,refreshMs);
+      mapTimer=timers.setInterval(pollMapHeader,Math.max(2000,pickupMs));
+      dropFeedTimer=timers.setInterval(pollDropFeed,pickupMs);
+    }
+    function setRefreshRate(ms,pickup) {
+      if (![1000,2000,5000,10000,20000].includes(ms)) return;
+      refreshMs=ms; pickupMs=Math.max(1000,Math.min(ms,pickup || ms));
+      restartTimers();
     }
     function togglePause() {
       if (!stream) return;
@@ -459,6 +467,7 @@
     }
     return {
       connect,
+      setRefreshRate,
       stop,
       captureFrame,
       downloadCurrentFrame,
