@@ -1125,7 +1125,7 @@
                 const blockText = String(line.text || "").trim();
                 if (isNonItemNotice(blockText)) continue;
                 const crop = cropLine(input.dropImage, line.bbox, 5, true),
-                  individual = crop
+                  individual = crop && !globalThis.MapleDropFeedProbe?.parseNotices?.(blockText).some(n => globalThis.MapleEtcCatalog?.find(n.replace(/ x\d+ \([^)]+\)$/, "")))
                     ? await recognize(crop, "drop-notice-line")
                     : null,
                   individualText = String(individual?.text || "").trim(),
