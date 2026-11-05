@@ -1110,6 +1110,10 @@
     function read(input) {
       const task = queue.then(async () => {
         const result = {};
+        if (input.characterNameImage) {
+          result.characterName = await recognize(input.characterNameImage, "character-name");
+          return result;
+        }
         if (input.dropImage) {
           try {
             const reading = await recognize(input.dropImage, "drop-notice", {
@@ -1482,7 +1486,9 @@
                   ? 6
                   : 7,
             tessedit_char_whitelist:
-              kind === "meso-scan"
+              kind === "character-name"
+                ? "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+                : kind === "meso-scan"
                 ? "0123456789,.MESOS"
                 : kind === "drop-notice" || kind === "drop-notice-line"
                   ? "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ()+-.,'!"
