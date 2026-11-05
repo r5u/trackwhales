@@ -157,6 +157,7 @@
           clearInterval: window.clearInterval.bind(window),
         },
       });
+      window.TrackwhalesExperience?.connect({session,capture,view});
       const on = (id, fn) => q(id)?.addEventListener("click", fn);
       on("#shareGameBtn", capture.connect);
       on("#stopSharingBtn", capture.stop);
