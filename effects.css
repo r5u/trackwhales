@@ -4,3 +4,5 @@
 .live-actions .btn{padding:9px 12px;font-size:10px;font-weight:500;background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--text)}.live-actions .btn:hover{background:var(--surface0);border-color:var(--surface1)}.live-actions #liveTab[aria-pressed=true]{border-color:var(--line);color:var(--text)}
 
 #liveTab:disabled{color:var(--muted);opacity:.65;cursor:default;border-color:var(--line)}
+
+.effects-layer.celebrating .effect-particle{width:6px;height:10px;opacity:.75}
