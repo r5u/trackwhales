@@ -2,3 +2,26 @@
 
 .tool-window{box-shadow:none!important}
 .brand>div:last-child{display:grid;grid-template-columns:auto auto;column-gap:10px;align-items:center}.brand strong{grid-column:1/-1}.visitor-counts{margin-top:0}
+
+/* Secondary view uses the available viewport; small screens retain normal scrolling. */
+@media (min-width:1000px) {
+ body.live-view .app{height:100dvh;min-height:680px;display:flex;flex-direction:column;padding-top:clamp(12px,2vh,24px);padding-bottom:16px}
+ body.live-view .top{flex:none;padding-bottom:12px;margin-bottom:0}
+ body.live-view nav.resource-links{flex:none;margin-bottom:0!important;padding-bottom:10px!important}
+ #livePage{flex:1;min-height:0;display:grid;grid-template-rows:auto auto auto auto minmax(140px,1fr);gap:clamp(8px,1.2vh,14px)}
+ #livePage .live-heading{margin:0;min-height:36px;gap:12px}
+ #livePage .live-identity,#livePage .live-exp,#livePage .live-metrics{margin:0}
+ #livePage .panel{padding:clamp(10px,1.6vh,18px)}
+ #livePage .live-identity{gap:16px}
+ #livePage .live-exp .chart-title{margin-bottom:8px}
+ #livePage .live-exp .progress{height:12px;margin-bottom:6px}
+ #livePage .live-metrics{gap:clamp(7px,1vh,12px)}
+ #livePage .live-metrics b{font-size:clamp(21px,2.7vh,25px);margin-top:4px;line-height:1.3}
+ #livePage .live-bottom{min-height:0;gap:14px}
+ #livePage .live-bottom>.panel{min-height:0;display:flex;flex-direction:column}
+ #livePage .live-bottom .chart-title{flex:none;margin-bottom:8px}
+ #liveChart{flex:1;min-height:0;display:flex;align-items:center}
+ #liveChart .chart{height:100%!important;min-height:0;max-height:260px}
+ #livePage .live-bottom video{flex:1;min-height:0;height:0;max-height:none;width:100%;object-fit:contain}
+ #livePage .live-bottom small{flex:none;margin-top:6px}
+}
