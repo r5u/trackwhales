@@ -158,7 +158,7 @@
             }
           }
         }
-        if (debug || !automatic) {
+        if (debug || !automatic || view.needsPreview?.()) {
           stage = "preview";
           await view.previewFrame(frame, cancelled);
           if (cancelled()) return;
