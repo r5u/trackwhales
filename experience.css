@@ -25,3 +25,5 @@
  #livePage .live-bottom video{flex:1;min-height:0;height:0;max-height:none;width:100%;object-fit:contain}
  #livePage .live-bottom small{flex:none;margin-top:6px}
 }
+
+.live-dot{color:var(--red)}.live-dot[data-tracking="true"]{color:var(--green)}
