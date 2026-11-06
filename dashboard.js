@@ -22,7 +22,8 @@
     const currentRegions = (image) => recognition.currentRegions(image);
     let selecting = null,
       dragStart = null,
-      dragCurrent = null;
+      dragCurrent = null,
+      calibrationOpen = false;
     function update() {
       const captureStream = getCapture()?.stream,
         now = clock(),
@@ -406,7 +407,18 @@
       setTimeout(() => q("#notice").classList.remove("show"), 4500);
     }
 
+    function closeCalibration() {
+      calibrationOpen = false;
+      selecting = dragStart = dragCurrent = null;
+      document.body.classList.remove("calibration-open", "meso-selecting");
+      updateRegionStatus();
+      q("#setMesoRegion")?.focus();
+    }
     function beginRegionSelection(name) {
+      const panel = q(".capture-debug"), body = q("#window-mesos .window-body");
+      if (panel && body && !debug) body.prepend(panel);
+      calibrationOpen = true;
+      document.body.classList.add("calibration-open");
       if (name !== "meso" && state.calibration.auto !== false)
         state.calibration = { ...currentRegions(), auto: false };
       selecting = selecting === name ? null : name;
@@ -414,6 +426,13 @@
       dragStart = dragCurrent = null;
       updateRegionStatus();
       drawRegions();
+      if (!getCapture()?.stream) {
+        q("#frameEmpty").textContent = "Start sharing your game window to select an area. Keep the inventory open for mesos.";
+      } else {
+        q("#frameEmpty").textContent = "Loading the shared capture…";
+        getCapture()?.captureFrame();
+      }
+      panel?.scrollIntoView?.({ block: "nearest" });
     }
 
     function updateRegionStatus() {
@@ -428,7 +447,7 @@
       q("#pickMeso")?.classList.toggle("active", selecting === "meso");
     }
     function drawRegions() {
-      if (!debug && selecting !== "meso") return;
+      if (!debug && !calibrationOpen) return;
       const canvas = q("#frameCanvas"),
         img = q("#latestFrame");
       if (!canvas || !img || !img.naturalWidth) return;
@@ -436,9 +455,11 @@
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const colors = { level: "var(--pink)", exp: "var(--mauve)", meso: "var(--yellow)" };
+      const palette = window.getComputedStyle(document.body);
+      const colors = Object.fromEntries(["level", "exp", "meso"].map((name, i) =>
+        [name, palette.getPropertyValue(["--pink", "--mauve", "--yellow"][i]).trim() || "#f5c2e7"]));
       const regions = currentRegions(img);
-      for (const name of debug ? ["level", "exp", "meso"] : ["meso"]) {
+      for (const name of ["level", "exp", "meso"]) {
         const r = name === "meso" ? state.mesoRegion : regions[name];
         if (!r) continue;
         const x = r.x * canvas.width,
@@ -576,6 +597,7 @@
       status.textContent = [size, text].filter(Boolean).join(" · ");
     }
     async function previewFrame(frame, cancelled = () => false) {
+      if (dragStart) return;
       const image = q("#latestFrame"),
         blob = await new Promise((resolve) =>
           frame.toBlob(resolve, "image/png"),
@@ -615,6 +637,17 @@
       updateRegionStatus();
     }
     function bindCalibration() {
+      const panel = q(".capture-debug");
+      if (panel && !q("#closeCalibration")) {
+        const close = document.createElement("button");
+        close.id = "closeCalibration";
+        close.className = "btn";
+        close.textContent = "Done";
+        close.type = "button";
+        close.addEventListener("click", closeCalibration);
+        panel.querySelector(".calibration-tools")?.append(close);
+        panel.addEventListener("keydown", e => { if (e.key === "Escape") closeCalibration(); });
+      }
       q("#pickLevel")?.addEventListener("click", () =>
         beginRegionSelection("level"),
       );
@@ -654,7 +687,7 @@
         };
       };
       canvas.addEventListener("pointerdown", (e) => {
-        if (!selecting) return;
+        if (!selecting || !q("#latestFrame")?.naturalWidth) return;
         dragStart = position(e);
         dragCurrent = dragStart;
         canvas.setPointerCapture(e.pointerId);
@@ -726,6 +759,7 @@
       showMesoPreview: (pixels) => showCropPreview("mesoCropPreview", pixels),
       showMapPreview: (pixels) => showCropPreview("mapCropPreview", pixels),
       showMapStatus,
+      needsPreview: () => calibrationOpen,
       previewFrame,
       notice,
       bindCalibration,
