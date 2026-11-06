@@ -13,3 +13,13 @@
  ::-webkit-scrollbar-thumb:hover{background:var(--pink)!important;border-color:var(--surface0)!important}
  ::-webkit-scrollbar-corner{background:var(--panel)!important}
 }
+
+/* Real scrollbar elements: keep native scrolling but replace its appearance. */
+[data-db-scrollbar]{scrollbar-width:none!important}
+[data-db-scrollbar]::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+.results,#details,#training{padding-right:14px}
+.db-scrollbar{position:fixed;z-index:100;background:var(--panel);border:1px solid var(--surface0);border-radius:8px;touch-action:none;user-select:none;cursor:pointer}
+.db-scrollbar.vertical{width:10px}.db-scrollbar.horizontal{height:10px}
+.db-scroll-thumb{position:absolute;border:1px solid var(--panel);border-radius:8px;background:var(--pink);min-width:6px;min-height:6px}
+.vertical .db-scroll-thumb{left:0;width:8px}.horizontal .db-scroll-thumb{top:0;height:8px}
+.db-scrollbar:focus-visible{outline:2px solid var(--pink);outline-offset:2px}.db-scrollbar:hover .db-scroll-thumb{filter:brightness(1.1)}
