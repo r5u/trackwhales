@@ -288,7 +288,7 @@
             : !store.state.items.length
               ? "Choose a potion type on each slot you want to track."
               : store.state.enabled
-                ? "Reading selected slots every 10 seconds."
+                ? `Reading selected slots every ${(getCapture()?.refreshIntervalMs || 10000) / 1000} seconds.`
                 : "Potion tracking paused.");
         const displayed = live || last;
         q("#itemsEmpty").hidden = !!displayed;
