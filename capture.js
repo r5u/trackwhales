@@ -468,6 +468,7 @@
     return {
       connect,
       setRefreshRate,
+      get refreshIntervalMs(){return refreshMs;},
       stop,
       captureFrame,
       downloadCurrentFrame,
