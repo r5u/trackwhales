@@ -2,6 +2,8 @@
 
 MapleStory Classic EXP and drop-value tracker, with a Catppuccin Mocha interface and pink accents.
 
+https://r5u.github.io/trackwhales/
+
 
 ## Credits
 
