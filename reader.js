@@ -64,7 +64,7 @@
       dropReadQueue = [],
       lastDropReadAt = 0, visibleDropKeys = new Set(), emptyDropReads = 0;
     const DROP_NOTICE_MIN_INTERVAL_MS = 1000,
-      DROP_NOTICE_QUEUE_LIMIT = 1;
+      DROP_NOTICE_QUEUE_LIMIT = 4;
     function mapProbeFingerprint(image) {
       const crop = mapNameApi?.cropHeaderText?.(image);
       if (!crop?.data || !crop.width || !crop.height) return null;
@@ -158,11 +158,8 @@
       lastDropReadAt = 0;
     }
     function observeDropProbe(image) {
-      return Boolean(
-        !session.state.paused &&
-          session.state.running &&
-          dropProbe?.observe(image),
-      );
+      return !session.state.paused && session.state.running
+        ? dropProbe?.observe(image) || [] : [];
     }
     async function processDropNotice({
       image,
