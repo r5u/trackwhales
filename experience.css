@@ -5,10 +5,10 @@
 
 /* Secondary view uses the available viewport; small screens retain normal scrolling. */
 @media (min-width:1000px) {
- body.live-view .app{height:100dvh;min-height:680px;display:flex;flex-direction:column;padding-top:clamp(12px,2vh,24px);padding-bottom:16px}
+ body.live-view .app{height:100dvh;min-height:640px;display:flex;flex-direction:column;padding-top:clamp(12px,2vh,24px);padding-bottom:16px}
  body.live-view .top{flex:none;padding-bottom:12px;margin-bottom:0}
  body.live-view nav.resource-links{flex:none;margin-bottom:0!important;padding-bottom:10px!important}
- #livePage{flex:1;min-height:0;display:grid;grid-template-rows:auto auto auto auto minmax(140px,1fr);gap:clamp(8px,1.2vh,14px)}
+ #livePage{flex:1;min-height:0;padding-top:12px;display:grid;grid-template-rows:auto auto auto auto minmax(100px,1fr);gap:clamp(8px,1.2vh,14px)}
  #livePage .live-heading{margin:0;min-height:36px;gap:12px}
  #livePage .live-identity,#livePage .live-exp,#livePage .live-metrics{margin:0}
  #livePage .panel{padding:clamp(10px,1.6vh,18px)}
