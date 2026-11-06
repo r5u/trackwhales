@@ -13,12 +13,13 @@
     view,
     debugTools,
     debug = false,
+    pickupTrackingEnabled = false,
     onFrame = null,
     onInvalidate = () => {},
     now = Date.now,
     timers = { setTimeout, setInterval, clearInterval },
   }) {
-    let refreshMs = 10000, pickupMs = 1000;
+    let refreshMs = 10000, pickupMs = 100;
     const FULL_SCAN_INTERVAL_MS = 10000,
       MAP_HEADER_POLL_INTERVAL_MS = 2000,
       DROP_FEED_POLL_INTERVAL_MS = 1000,
@@ -321,8 +322,8 @@
       } catch {
         return;
       }
-      const changed = reader.observeDropProbe(probe);
-      if (!changed && !globalThis.TrackwhalesLoot?.isAutomatic?.()) return;
+      const newRows = reader.observeDropProbe(probe);
+      if (!newRows?.length) return;
       if (!dropImageCanvas) dropImageCanvas = document.createElement("canvas");
       if (
         dropImageCanvas.width !== sourceWidth ||
@@ -333,21 +334,30 @@
       }
       try {
         const context = dropImageCanvas.getContext("2d", {
-          willReadFrequently: true,
-        });
-        context.drawImage(
-          video,
-          sourceX,
-          sourceY,
-          sourceWidth,
-          sourceHeight,
-          0,
-          0,
-          sourceWidth,
-          sourceHeight,
-        );
-        const image = context.getImageData(0, 0, sourceWidth, sourceHeight);
-        void reader.readDropNotice(image, now());
+            willReadFrequently: true,
+          }),
+          probePadding = 2;
+        for (const row of newRows) {
+          const cropTop = Math.max(0, row.y - probePadding),
+            cropBottom = Math.min(height, row.y + row.height + probePadding),
+            top = sourceY + Math.floor((cropTop * sourceHeight) / height),
+            bottom = sourceY + Math.ceil((cropBottom * sourceHeight) / height),
+            cropHeight = Math.max(1, Math.min(sourceY + sourceHeight, bottom) - top);
+          if (dropImageCanvas.height !== cropHeight) dropImageCanvas.height = cropHeight;
+          context.drawImage(
+            video,
+            sourceX,
+            top,
+            sourceWidth,
+            cropHeight,
+            0,
+            0,
+            sourceWidth,
+            cropHeight,
+          );
+          const image = context.getImageData(0, 0, sourceWidth, cropHeight);
+          void reader.readDropNotice(image, now());
+        }
       } catch {
         /* A drop-feed probe never interrupts EXP or map recognition. */
       }
@@ -444,7 +454,7 @@
       if (!stream) return;
       timer=timers.setInterval(captureFrame,refreshMs);
       mapTimer=timers.setInterval(pollMapHeader,Math.max(2000,pickupMs));
-      dropFeedTimer=timers.setInterval(pollDropFeed,pickupMs);
+      if(pickupTrackingEnabled)dropFeedTimer=timers.setInterval(pollDropFeed,pickupMs);
     }
     function setRefreshRate(ms,pickup) {
       if (![1000,2000,5000,10000,20000].includes(ms)) return;
