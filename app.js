@@ -140,6 +140,7 @@
         onName: (name) => { session.state.characterName = name; session.save(); view.update(); },
       });
       capture = Capture.create({
+        pickupTrackingEnabled: true,
         navigator,
         video: q("#sharePreview"),
         document,
