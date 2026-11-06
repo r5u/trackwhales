@@ -3,3 +3,13 @@
 #moreMaps{font-size:10px;padding:4px 8px;margin-top:8px}
 
 .embedded-database header{display:none}.embedded-database main{padding:12px;gap:10px}
+
+/* Chromium's standard scrollbar properties override WebKit pseudo-elements. */
+@supports selector(::-webkit-scrollbar){
+ html,body,*{scrollbar-color:auto!important;scrollbar-width:auto!important}
+ ::-webkit-scrollbar{width:10px!important;height:10px!important}
+ ::-webkit-scrollbar-track{background:var(--panel)!important}
+ ::-webkit-scrollbar-thumb{background:var(--pink)!important;border:2px solid var(--panel)!important;border-radius:10px!important}
+ ::-webkit-scrollbar-thumb:hover{background:var(--pink)!important;border-color:var(--surface0)!important}
+ ::-webkit-scrollbar-corner{background:var(--panel)!important}
+}
