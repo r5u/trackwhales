@@ -4322,7 +4322,8 @@ return {detect,crop,anchors,percentageRegion};
     const currentRegions = (image) => recognition.currentRegions(image);
     let selecting = null,
       dragStart = null,
-      dragCurrent = null;
+      dragCurrent = null,
+      calibrationOpen = false;
     function update() {
       const captureStream = getCapture()?.stream,
         now = clock(),
@@ -4706,7 +4707,18 @@ return {detect,crop,anchors,percentageRegion};
       setTimeout(() => q("#notice").classList.remove("show"), 4500);
     }
 
+    function closeCalibration() {
+      calibrationOpen = false;
+      selecting = dragStart = dragCurrent = null;
+      document.body.classList.remove("calibration-open", "meso-selecting");
+      updateRegionStatus();
+      q("#setMesoRegion")?.focus();
+    }
     function beginRegionSelection(name) {
+      const panel = q(".capture-debug"), body = q("#window-mesos .window-body");
+      if (panel && body && !debug) body.prepend(panel);
+      calibrationOpen = true;
+      document.body.classList.add("calibration-open");
       if (name !== "meso" && state.calibration.auto !== false)
         state.calibration = { ...currentRegions(), auto: false };
       selecting = selecting === name ? null : name;
@@ -4714,6 +4726,13 @@ return {detect,crop,anchors,percentageRegion};
       dragStart = dragCurrent = null;
       updateRegionStatus();
       drawRegions();
+      if (!getCapture()?.stream) {
+        q("#frameEmpty").textContent = "Start sharing your game window to select an area. Keep the inventory open for mesos.";
+      } else {
+        q("#frameEmpty").textContent = "Loading the shared capture…";
+        getCapture()?.captureFrame();
+      }
+      panel?.scrollIntoView?.({ block: "nearest" });
     }
 
     function updateRegionStatus() {
@@ -4728,7 +4747,7 @@ return {detect,crop,anchors,percentageRegion};
       q("#pickMeso")?.classList.toggle("active", selecting === "meso");
     }
     function drawRegions() {
-      if (!debug && selecting !== "meso") return;
+      if (!debug && !calibrationOpen) return;
       const canvas = q("#frameCanvas"),
         img = q("#latestFrame");
       if (!canvas || !img || !img.naturalWidth) return;
@@ -4736,9 +4755,11 @@ return {detect,crop,anchors,percentageRegion};
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const colors = { level: "var(--pink)", exp: "var(--mauve)", meso: "var(--yellow)" };
+      const palette = window.getComputedStyle(document.body);
+      const colors = Object.fromEntries(["level", "exp", "meso"].map((name, i) =>
+        [name, palette.getPropertyValue(["--pink", "--mauve", "--yellow"][i]).trim() || "#f5c2e7"]));
       const regions = currentRegions(img);
-      for (const name of debug ? ["level", "exp", "meso"] : ["meso"]) {
+      for (const name of ["level", "exp", "meso"]) {
         const r = name === "meso" ? state.mesoRegion : regions[name];
         if (!r) continue;
         const x = r.x * canvas.width,
@@ -4876,6 +4897,7 @@ return {detect,crop,anchors,percentageRegion};
       status.textContent = [size, text].filter(Boolean).join(" · ");
     }
     async function previewFrame(frame, cancelled = () => false) {
+      if (dragStart) return;
       const image = q("#latestFrame"),
         blob = await new Promise((resolve) =>
           frame.toBlob(resolve, "image/png"),
@@ -4915,6 +4937,17 @@ return {detect,crop,anchors,percentageRegion};
       updateRegionStatus();
     }
     function bindCalibration() {
+      const panel = q(".capture-debug");
+      if (panel && !q("#closeCalibration")) {
+        const close = document.createElement("button");
+        close.id = "closeCalibration";
+        close.className = "btn";
+        close.textContent = "Done";
+        close.type = "button";
+        close.addEventListener("click", closeCalibration);
+        panel.querySelector(".calibration-tools")?.append(close);
+        panel.addEventListener("keydown", e => { if (e.key === "Escape") closeCalibration(); });
+      }
       q("#pickLevel")?.addEventListener("click", () =>
         beginRegionSelection("level"),
       );
@@ -4954,7 +4987,7 @@ return {detect,crop,anchors,percentageRegion};
         };
       };
       canvas.addEventListener("pointerdown", (e) => {
-        if (!selecting) return;
+        if (!selecting || !q("#latestFrame")?.naturalWidth) return;
         dragStart = position(e);
         dragCurrent = dragStart;
         canvas.setPointerCapture(e.pointerId);
@@ -5026,6 +5059,7 @@ return {detect,crop,anchors,percentageRegion};
       showMesoPreview: (pixels) => showCropPreview("mesoCropPreview", pixels),
       showMapPreview: (pixels) => showCropPreview("mapCropPreview", pixels),
       showMapStatus,
+      needsPreview: () => calibrationOpen,
       previewFrame,
       notice,
       bindCalibration,
@@ -6138,7 +6172,7 @@ return {detect,crop,anchors,percentageRegion};
             }
           }
         }
-        if (debug || !automatic) {
+        if (debug || !automatic || view.needsPreview?.()) {
           stage = "preview";
           await view.previewFrame(frame, cancelled);
           if (cancelled()) return;
@@ -8005,7 +8039,7 @@ return {detect,crop,anchors,percentageRegion};
 );
 </script>
 <!-- APP END -->
-<style>body.meso-selecting .capture-debug{display:block!important}</style><style>
+<style>body.calibration-open .capture-debug{display:block!important}body:not(.debug) .capture-debug .ocr-tools,body:not(.debug) .capture-debug .ocr-output,body:not(.debug) #debugDownloadStatus{display:none}body:not(.debug) .capture-debug{flex:none}.capture-debug .region-status{flex-basis:100%;line-height:1.6}.capture-debug .frame-stage{margin:8px auto;max-width:100%}.capture-debug #closeCalibration{margin-left:auto}</style><style>
 :root{--bg:var(--bg);--panel:var(--panel);--panel2:var(--bg);--line:var(--surface0);--muted:var(--muted);--text:var(--text);--lime:var(--pink);--pink:var(--pink);--purple:var(--mauve);--good:var(--green)}
 body{background:var(--bg);font-size:14px}.app{max-width:1480px;padding:30px 40px 48px}.top{padding-bottom:26px;border-bottom:1px solid var(--line);margin-bottom:28px!important}.brand{gap:12px}.brand strong{font-size:23px;font-weight:800;letter-spacing:-.9px}.brand span{font-size:9px;letter-spacing:1.6px;margin-top:2px}.mark{background:color-mix(in srgb,var(--pink) 9%,transparent);color:var(--pink);border:1px solid color-mix(in srgb,var(--pink) 20%,transparent);border-radius:14px;width:46px;height:46px;font-size:29px}.topright{gap:28px}.clock-block{display:flex;flex-direction:column;gap:3px;text-decoration:none;color:var(--text);font-family:'DM Mono',monospace}.clock-block>span{color:var(--muted);font-size:9px;letter-spacing:1px}.clock-block b{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}.clock-block small{font-size:9px;color:var(--muted)}.reset-block b{color:var(--pink)}.reset-block{border-left:1px solid var(--line);padding-left:28px}.visit-time{display:none}.live-pill{font-size:9px;color:var(--muted)}.grid{grid-template-columns:minmax(0,2.1fr) minmax(300px,1fr);gap:20px}.panel{padding:24px;border-radius:14px;box-shadow:none}.panel-head{margin-bottom:20px}.label{font-family:Manrope,system-ui,sans-serif;font-size:14px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:700}.tag{font-size:8px;border-color:var(--line);color:var(--muted)}.stats{gap:1px;border:1px solid var(--line);border-radius:10px;overflow:hidden}.stat{border-radius:0;background:var(--panel2);padding:18px 14px;min-height:112px}.v{font-size:28px;letter-spacing:-1px}.k{font-size:10px}.hint{font-size:10px}.chart-wrap{background:var(--panel);border-color:var(--line);border-radius:10px;padding:16px}.chart{height:190px}.chart-title{font-size:11px}.chart-wrap .stats{margin-bottom:0}.btn{font-size:11px;padding:9px 12px;border-radius:7px}.btn:hover{background:var(--surface0)}.capture-actions #shareGameBtn{color:var(--bg)!important;flex:1;width:100%;flex-basis:100%;font-size:13px;padding:13px}.source{background:var(--panel2)}.level-num{color:var(--pink)}.progress{background:var(--surface0);height:6px}.eta{margin-top:20px}.setup .panel-head .tag{display:none}.items-panel h2{font-size:15px}.items-panel{margin-top:20px}.log-item{font-size:10px}.tracking-summary{font-size:11px}.chart-wrap .stat{border-radius:8px}.stream-panel{background:var(--panel);border-color:var(--line)}.stream-panel header,.stream-panel footer{color:var(--muted)}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--pink);outline-offset:3px}
 @media(max-width:1050px){.app{padding:24px}.topright{gap:15px}.reset-block{padding-left:15px}.grid{grid-template-columns:minmax(0,1.7fr) 300px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:800px){.grid{grid-template-columns:1fr}.right-col{display:grid;grid-template-columns:1fr 1fr}.clock-block b{font-size:16px}.live-pill{display:none}}@media(max-width:620px){.app{padding:18px 14px}.top{flex-wrap:wrap;gap:24px}.topright{width:100%;justify-content:space-between}.clock-block b{font-size:19px}.reset-block{padding-left:20px}.right-col{display:flex}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:18px}.v{font-size:24px}}
