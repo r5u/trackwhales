@@ -379,7 +379,7 @@
       } catch {}
     }
     function readMapName(frame, readAt, generation, force = false) {
-      if (!localOcr || !mapNameApi || !frame?._pixels || (!force && readAt - lastMapDetectAt < 9000))
+      if (!localOcr || !mapNameApi || !frame?._pixels || (!force && readAt - lastMapDetectAt < (getCapture()?.refreshIntervalMs || 10000)))
         return;
       lastMapDetectAt = readAt;
       let mapImage;
@@ -463,7 +463,7 @@
           readAt = rawTime < 1e12 ? rawTime * 1000 : rawTime;
         if (
           localOcr && frame._pixels && !mesoReading &&
-          (!lastMesoReadAt || readAt - lastMesoReadAt >= 10000)
+          (!lastMesoReadAt || readAt - lastMesoReadAt >= (getCapture()?.refreshIntervalMs || 10000))
         ) {
           lastMesoReadAt = readAt;
           mesoReading = true;
