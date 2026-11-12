@@ -1,0 +1,35 @@
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.TrackwhalesMapPreview=api;})(typeof window==='undefined'?globalThis:window,()=>{
+'use strict';
+const tooltipByDocument=new WeakMap();
+const TYPES={0:'Start point',1:'Invisible portal',2:'Portal',3:'Collision portal',4:'Changeable portal',5:'Invisible changeable portal',6:'Town portal point',7:'Script portal',8:'Invisible script portal',9:'Collision script portal',10:'Hidden portal',11:'Hidden script portal',12:'Jump trigger',13:'Movement trigger',14:'Collision trigger'};
+const hiddenType=type=>[1,5,8,10,11].includes(Number(type));
+function isTravelPortal(portal){const type=Number(portal.type),dest=Number(portal.dest_map_id);if([0,6].includes(type))return false;const known=Number.isSafeInteger(dest)&&dest!==999999999;return known||[7,8,9,10,11,12,13,14].includes(type);}
+function pointPercent(point,width,height){if(!Number.isFinite(point?.x)||!Number.isFinite(point?.y)||!(width>0)||!(height>0)||point.x<0||point.y<0||point.x>width||point.y>height)return null;return{x:point.x/width*100,y:point.y/height*100};}
+const lookup=(rows,id)=>rows instanceof Map?(rows.get(id)||rows.get(String(id))):Array.isArray(rows)?rows.find(r=>String(r.id)===String(id)):rows?.[id];
+function portalLabel(portal,maps,map){const kind=TYPES[portal.type]||'Portal type '+portal.type;const dest=Number(portal.dest_map_id);let where;if(!Number.isSafeInteger(dest)||dest===999999999)where='Destination not recorded in client';else if(dest===Number(map.id))where='Within '+map.name+(portal.dest_portal?' · '+portal.dest_portal:'');else where=lookup(maps,dest)?.name||'Map #'+dest;return kind+' → '+where+(portal.name?' ('+portal.name+')':'');}
+function create(map,{maps=[],monsters=[],onNavigate,document:doc=globalThis.document}={}){
+ const existingTooltip=tooltipByDocument.get(doc);if(existingTooltip)existingTooltip.hidden=true;
+ const el=(tag,text,cls)=>{const e=doc.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};
+ const figure=el('figure',undefined,'tw-map-preview'),controls=el('div',undefined,'tw-map-controls'),viewport=el('div',undefined,'tw-map-viewport'),stage=el('div',undefined,'tw-map-stage'),img=el('img');img.alt=map.name+' map with spawn points and portals';img.loading='lazy';
+ const full=typeof map.render_url==='string'&&/^https:\/\/osmsdataexplorer\.com\/data\//.test(map.render_url),url=full?map.render_url:map.minimap_url;
+ if(!url){figure.append(el('p','Map image unavailable.','tw-map-note'));return figure;}
+ img.src=url;stage.append(img);viewport.append(stage);figure.append(controls,viewport);
+ const mobToggle=el('input'),portalToggle=el('input');mobToggle.type=portalToggle.type='checkbox';mobToggle.checked=portalToggle.checked=true;
+ for(const [input,text] of [[mobToggle,'Mobs'],[portalToggle,'Portals']]){const label=el('label');label.append(input,doc.createTextNode(text));controls.append(label);}
+ const zoom=el('button','Zoom map');zoom.type='button';zoom.setAttribute('aria-pressed','false');controls.append(zoom);zoom.onclick=()=>{const expanded=figure.classList.toggle('tw-map-zoomed');zoom.textContent=expanded?'Fit map':'Zoom map';zoom.setAttribute('aria-pressed',String(expanded));};
+ const link=el('a','Full image ↗');link.href=url;link.target='_blank';link.rel='noopener';controls.append(link);
+ const caption=el('figcaption',full?'Red dots: client mob spawn points · blue rings: portals · dashed rings: hidden/invisible portals. Hover or focus a portal for its destination.':'Full map unavailable; minimap shown without position markers.','tw-map-note');figure.append(caption);
+ // This dataset has canvas-space coordinates. The source renderer uses x/naturalWidth and y/naturalHeight for the full render, not minimap bounds.
+ let tip;const showTip=(target,text)=>{tip=tooltipByDocument.get(doc);if(!tip){tip=el('div',undefined,'tw-map-tooltip');tip.setAttribute('role','tooltip');doc.body.append(tip);tooltipByDocument.set(doc,tip);doc.addEventListener('pointerdown',()=>{tip.hidden=true;});doc.addEventListener('keydown',()=>{tip.hidden=true;});doc.addEventListener('scroll',()=>{tip.hidden=true;},{capture:true,passive:true});doc.defaultView.addEventListener('resize',()=>{tip.hidden=true;});}tip.textContent=text;tip.hidden=false;const r=target.getBoundingClientRect(),width=doc.defaultView.innerWidth,height=doc.defaultView.innerHeight;tip.style.left=Math.max(6,Math.min(width-tip.offsetWidth-6,r.left+r.width/2-tip.offsetWidth/2))+'px';tip.style.top=Math.max(6,Math.min(height-tip.offsetHeight-6,r.top-tip.offsetHeight-8))+'px';};const hideTip=()=>{if(tip)tip.hidden=true;};viewport.addEventListener('scroll',hideTip,{passive:true});
+ function marker(point,cls,label,click){const percent=pointPercent(point,img.naturalWidth,img.naturalHeight);if(!percent)return;const node=el(click?'button':'span',undefined,'tw-map-marker '+cls);if(click){node.type='button';node.onclick=()=>{hideTip();click();};}else if(cls.includes('portal')){node.tabIndex=0;node.setAttribute('role','img');}node.style.left=percent.x+'%';node.style.top=percent.y+'%';node.title=label;node.setAttribute('aria-label',label);node.addEventListener('mouseenter',()=>showTip(node,label));node.addEventListener('mouseleave',hideTip);node.addEventListener('focus',()=>showTip(node,label));node.addEventListener('blur',hideTip);node.addEventListener('keydown',e=>{if(e.key==='Escape')hideTip();});stage.append(node);}
+ function draw(){stage.querySelectorAll('.tw-map-marker').forEach(e=>e.remove());if(!full)return;
+  if(mobToggle.checked)for(const point of map.mobs||[])marker(point,'tw-map-mob',(lookup(monsters,point.mob_id)?.name||'Monster #'+point.mob_id)+' · spawn point');
+  if(portalToggle.checked)for(const portal of map.portals||[]){if(!isTravelPortal(portal))continue;const destination=Number(portal.dest_map_id),canNavigate=typeof onNavigate==='function'&&Number.isSafeInteger(destination)&&destination!==999999999&&lookup(maps,destination);marker(portal,'tw-map-portal'+(hiddenType(portal.type)?' tw-map-hidden':''),portalLabel(portal,maps,map),canNavigate?()=>onNavigate(destination):undefined);}
+ }
+ img.addEventListener('load',draw);if(img.complete&&img.naturalWidth)draw();mobToggle.onchange=portalToggle.onchange=draw;
+ img.addEventListener('error',()=>{stage.replaceChildren(el('p','Map image could not load. Open the full image link to retry.','tw-map-note'));});
+ const portals=(map.portals||[]).filter(isTravelPortal);if(portals.length){const details=el('details',undefined,'tw-map-portals'),summary=el('summary','Portals · '+portals.length);details.append(summary);for(const p of portals){const text=portalLabel(p,maps,map),dest=Number(p.dest_map_id),known=lookup(maps,dest);if(onNavigate&&known){const b=el('button',text);b.type='button';b.onclick=()=>onNavigate(dest);details.append(b);}else details.append(el('small',text));}figure.append(details);}
+ return figure;
+}
+return{create,pointPercent,portalLabel,hiddenType,isTravelPortal,portalType:type=>TYPES[type]||'Portal type '+type};
+});

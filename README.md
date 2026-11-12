@@ -83,13 +83,19 @@ Use category filters, sorting, **Search all**, **Show more**, and linked records
 
 ### Find training maps
 
-Open **Find a training map** in the dashboard tools. Enter **Your level** or use the tracked level, choose your class and actual attack element, then select **Solo** or **6-person party**. Browse up to 60 suggestions with **More maps**. Expand a result for monster stats, elemental weaknesses/resistances, and a minimap.
+Open **Find a training map** in the dashboard tools. Enter **Your level** or use the tracked level, choose your class and actual attack element, then select **Solo** or **6-person party**. Browse up to 60 suggestions with **More maps**. Expand a result for monster stats, elemental weaknesses/resistances, and an interactive map preview.
 
 Rankings estimate suitability from monster level, EXP relative to HP, client spawn points, and selected elemental affinity. Class presets select an initial attack element; they do not assume gear or damage. Solo favors monsters near or slightly below your level. Party mode assumes six active players of similar level and favors denser maps with somewhat stronger monsters. Towns, bosses, invincible monsters, special instances, and identified unreleased/test areas are excluded from recommendations.
 
+Set minimum/maximum damage per successful hit and filter maps to kills within **1, 2, or 3 hits**. Reliable mode uses minimum damage; best case uses maximum. All listed monsters in a map must pass. The estimate uses HP directly: enter damage after skill/element/defense effects; it does not model misses, crits, or multi-hit skills.
+
+Full map previews show red spawn points, normal portals, hidden/invisible portals, and destination tooltips. Database portal destinations can be clicked to navigate. Scripted destinations absent from client data remain unknown.
+
+Monster details in Database and Training maps include MeowDB item drops. Community reports have unpublished chances; historical OSMLib reference percentages are shown separately and are not confirmed Classic World rates.
+
 These are **not measured EXP/hour or guaranteed optimal routes**. Damage, accuracy, movement, buffs, party bonuses, map layout, and server respawns can change actual results. Spawn points are not a live monster count.
 
-The bundled database snapshot is dated October 29, 2026. Client records do not prove live availability. Server drop tables are not included; the community lookup opens a separate wiki search.
+The bundled database snapshot is dated October 29, 2026. Client records do not prove live availability. Drop snapshots are sourced separately from MeowDB with explicit source labels.
 
 ## Korean Translator
 

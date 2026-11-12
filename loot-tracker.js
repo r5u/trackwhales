@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const timing=q('lootPickupRate');
  if(timing){timing.value=String(window.TrackwhalesExperience?.pickupRate||1000);timing.addEventListener('change',()=>window.TrackwhalesExperience?.setPickupRate(Number(timing.value)));}
  const auto=q('lootAutoDetect');
- function showMode(){auto.checked=data.autoDetect;q('lootManual').hidden=data.autoDetect;q('lootModeStatus').textContent=data.autoDetect?'Pickup names, quantities and NPC prices are added automatically.':'Manual mode · add the items you want to value below.';}
+ function showMode(){auto.checked=data.autoDetect;q('lootManual').hidden=data.autoDetect;if(q('inventoryDropStatus'))q('inventoryDropStatus').hidden=!data.autoDetect;q('lootModeStatus').textContent=data.autoDetect?'Automatic pickup detection':'Manual mode · add drops below';}
  auto.addEventListener('change',()=>{data.autoDetect=auto.checked;if(data.autoDetect)data.autoSince=Date.now();save();showMode();});showMode();
  const list=q('lootItemNames');if(list&&catalog){for(const name of [...new Set(catalog.items.map(i=>i.name))].sort()){const option=element('option');option.value=name;list.append(option)}}
  const hint=()=>{const info=priceFor(q('lootName').value.trim());q('lootPrice').placeholder=Number.isSafeInteger(info.price)?'Auto: '+info.price.toLocaleString()+' mesos':'Mesos / item';};q('lootName').addEventListener('input',hint);

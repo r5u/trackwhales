@@ -10,6 +10,7 @@
    const points=map.mobs||[];if(!points.length)continue;
    const groups=new Map();for(const point of points){const mob=index.get(point.mob_id);if(!mob||mob.is_boss||mob.invincible||!mob.hp||!mob.exp||mob.id>=54&&mob.id<=63||mob.id===700003||/^(GM |Test\(|Tutorial)/i.test(mob.name))continue;groups.set(mob.id,{mob,count:(groups.get(mob.id)?.count||0)+1});}
    const rows=[...groups.values()];const count=rows.reduce((s,r)=>s+r.count,0);if(!count||count<points.length*.8)continue;
+   if(options.maxHits){const target=Number(options.maxHits),basis=options.hitBasis==='possible'?'best':'worst';if(![1,2,3].includes(target)||rows.some(r=>{const hits=hitsToKill(r.mob.hp,options.minDamage,options.maxDamage);return !hits||hits[basis]>target;}))continue;}
    const avg=key=>rows.reduce((s,r)=>s+r.mob[key]*r.count,0)/count;
    const mobLevel=avg('level');if(mobLevel<Math.max(1,player-(wide?22:14))||rows.some(r=>r.mob.level>player+(party?8:3)))continue;
    if(party&&count<12)continue;
@@ -25,6 +26,7 @@
  }
  function elementMultiplier(mob,element){const value=String(mob.elements?.[element]||'').toLowerCase();return value==='weak'?1.5:value==='strong'?.5:value==='immune'?0:1;}
  function weaknesses(mob){return Object.entries(mob.elements||{}).filter(([,value])=>String(value).toLowerCase()==='weak').map(([name])=>name);}
+ function hitsToKill(hp,minDamage,maxDamage){hp=Number(hp);const min=Number(minDamage),max=Number(maxDamage);if(!Number.isFinite(hp)||hp<=0||!Number.isFinite(min)||!Number.isFinite(max)||min<=0||max<min)return null;return {best:Math.ceil(hp/max),worst:Math.ceil(hp/min)};}
  function search(rows,query){const words=String(query||'').toLowerCase().trim().split(/\s+/).filter(Boolean);return rows.filter(row=>words.every(w=>[row.name,row.id,row.item_id,row.region,row.street_name,row.category,row.sub_category,row.class_name,row.discipline,row.gender].filter(v=>v!==undefined).join(' ').toLowerCase().includes(w)));}
- return {level,recommend,search,elementMultiplier,weaknesses};
+ return {level,recommend,search,elementMultiplier,weaknesses,hitsToKill};
 });
