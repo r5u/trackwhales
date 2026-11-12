@@ -1,31 +1,41 @@
 (()=>{'use strict';
 const q=s=>document.querySelector(s),core=TrackwhalesTranslation,data=LupinGlossary;
 let direction='ko-en',identity=0,busy=false,jobId=null,worker=null,pending=null,stream=null,ocr=null,ocrPromise=null,scanBusy=false,region=null,drag=null,timer=null;
-const engines=new Map(),history=[];
+const engines=new Map(),nativeFailed=new Set(),history=[];
+let modelDeadline=null,modelTotalDeadline=null;
+function finishPending(error){clearTimeout(modelDeadline);clearTimeout(modelTotalDeadline);modelDeadline=null;modelTotalDeadline=null;const p=pending;pending=null;if(error){worker?.terminate();worker=null;p?.reject(error);}}
+function armDeadline(){clearTimeout(modelDeadline);modelDeadline=setTimeout(()=>finishPending(Error('The language model stopped responding. Check your connection and retry, or use a shorter game-chat phrase.')),90000);}
+function bounded(promise,ms,controller){let t;return Promise.race([promise,new Promise((_,reject)=>{t=setTimeout(()=>{controller?.abort();reject(Error('Browser language pack timed out'));},ms);})]).finally(()=>clearTimeout(t));}
 function status(text,error=false){q('#status').textContent=text;q('#status').dataset.error=String(error)}
 function changed(){identity++;q('#count').textContent=q('#input').value.length+' / 300';q('#copy').disabled=true;q('#output').textContent='Your translation appears here.';q('#note').textContent='Review translations before sending.'}
-function resetWork(){identity++;worker?.terminate();worker=null;if(pending){pending.reject(Error('Cancelled'));pending=null}busy=false;jobId=null;q('#translate').disabled=false;}
+function resetWork(){identity++;finishPending(Error('Cancelled'));worker?.terminate();worker=null;busy=false;jobId=null;q('#translate').disabled=false;q('#translate').textContent=direction==='ko-en'?'Translate to English':'Translate to Korean';}
 function mode(next){resetWork();q('#auto').checked=false;direction=next;q('#readTab').setAttribute('aria-pressed',String(next==='ko-en'));q('#writeTab').setAttribute('aria-pressed',String(next==='en-ko'));q('#captureTools').hidden=next==='en-ko';q('#inputLabel').textContent=next==='ko-en'?'Korean text':'English message';q('#outputLabel').textContent=next==='ko-en'?'English':'Korean';q('#input').placeholder=next==='ko-en'?'Paste Korean chat, or scan your game window.':'Write a reply, e.g. LF2M KPQ or please invite me';q('#translate').textContent=next==='ko-en'?'Translate to English':'Translate to Korean';q('#input').value='';changed();status('Ready · translations stay on your device');}
 function fallback(text,id){
- if(!worker){worker=new Worker('translator-worker.js',{type:'module'});worker.onmessage=({data:m})=>{if(m.type==='progress'){if(pending?.id===identity)status(m.text);return}if(pending&&m.id===pending.id){const p=pending;pending=null;m.type==='result'?p.resolve(m.text):p.reject(Error(m.text));}};worker.onerror=()=>{pending?.reject(Error('The local translator could not start. Check your connection and try again.'));pending=null;worker?.terminate();worker=null;};}
- status('Loading local fallback · first download is about 600 MB…');return new Promise((resolve,reject)=>{pending={id,resolve,reject};worker.postMessage({id,text,direction});});
+ if(!worker){worker=new Worker('translator-worker.js?v=20261111-1',{type:'module'});worker.onmessage=({data:m})=>{
+  if(!pending||m.id!==pending.id)return;
+  if(m.type==='progress'){armDeadline();if(pending.id===identity)status(m.text);return;}
+  const p=pending;clearTimeout(modelDeadline);clearTimeout(modelTotalDeadline);modelDeadline=null;modelTotalDeadline=null;pending=null;
+  if(m.type==='result')p.resolve(m.text);else{worker?.terminate();worker=null;p.reject(Error(m.text));}
+ };worker.onerror=()=>finishPending(Error('The local translator could not start. Check your connection and retry.'));worker.onmessageerror=()=>finishPending(Error('The translator returned an unreadable response. Please retry.'));}
+ status(direction==='ko-en'?'Loading Korean → English · about 120 MB on first use…':'Loading English → Korean · about 600 MB on first use…');
+ return new Promise((resolve,reject)=>{pending={id,resolve,reject};armDeadline();modelTotalDeadline=setTimeout(()=>finishPending(Error('The language model took too long to load. Retry on a faster connection; completed files stay cached.')),600000);worker.postMessage({id,text,direction});});
 }
 async function localTranslate(text,id){
  const which=direction;
- if('Translator' in self){
-  try{let engine=engines.get(which);if(!engine){const options={sourceLanguage:which==='en-ko'?'en':'ko',targetLanguage:which==='en-ko'?'ko':'en'};const available=await Translator.availability(options);if(available!=='unavailable'){status('Preparing browser language pack…');engine=await Translator.create({...options,monitor:m=>m.addEventListener('downloadprogress',e=>status('Loading language pack · '+Math.round(e.loaded*100)+'%'))});engines.set(which,engine);}}
-   if(engine){status('Translating on your device…');return await engine.translate(text);}
-  }catch(e){if(id!==identity)throw e;}
+ if('Translator' in self&&!nativeFailed.has(which)&&new URLSearchParams(location.search).get('engine')!=='local'){
+  try{let engine=engines.get(which);if(!engine){const options={sourceLanguage:which==='en-ko'?'en':'ko',targetLanguage:which==='en-ko'?'ko':'en'};const available=await bounded(Translator.availability(options),10000);if(available!=='unavailable'){status('Preparing browser language pack…');const controller=new AbortController();engine=await bounded(Translator.create({...options,signal:controller.signal,monitor:m=>m.addEventListener('downloadprogress',e=>status('Loading language pack · '+Math.round(e.loaded*100)+'%'))}),20000,controller);engines.set(which,engine);}}
+   if(engine){status('Translating on your device…');return await bounded(engine.translate(text),30000);}
+  }catch(e){nativeFailed.add(which);engines.get(which)?.destroy?.();engines.delete(which);if(id!==identity)throw e;}
  }
  if(id!==identity)throw Error('Cancelled');return fallback(text,id);
 }
 async function translate(){
- if(busy)return;const original=core.clean(q('#input').value);if(!original){status('Enter some text or scan your game window.');q('#input').focus();return;}
- const id=++identity,which=direction;busy=true;jobId=id;q('#translate').disabled=true;q('#copy').disabled=true;
+ if(busy){resetWork();q('#translate').textContent=direction==='ko-en'?'Translate to English':'Translate to Korean';status('Translation cancelled');return;}const original=core.clean(q('#input').value);if(!original){status('Enter some text or scan your game window.');q('#input').focus();return;}
+ const id=++identity,which=direction;busy=true;jobId=id;q('#translate').disabled=false;q('#translate').textContent='Cancel translation';q('#copy').disabled=true;
  try{const source=which==='en-ko'?core.expand(original):original;const direct=core.direct(source,which,data);const result=core.validate(source,direct??await localTranslate(source,id));if(id!==identity)return;
   q('#output').textContent=result;q('#copy').disabled=false;q('#note').textContent=direct?'Lupin game-chat glossary · check before sending':'Local machine translation · check the original';status('Translation ready');history.unshift({original,result,direction:which});history.splice(12);renderHistory();
  }catch(e){if(id===identity){q('#output').textContent='Original: '+original;status(e.message,true);}}
- finally{if(jobId===id){busy=false;jobId=null;q('#translate').disabled=false;}}
+ finally{if(jobId===id){busy=false;jobId=null;q('#translate').disabled=false;q('#translate').textContent=direction==='ko-en'?'Translate to English':'Translate to Korean';}}
 }
 function renderHistory(){q('#history').replaceChildren();q('#historyCount').textContent=history.length;for(const item of history){const article=document.createElement('article'),original=document.createElement('small'),result=document.createElement('p');original.textContent=item.original;result.textContent=item.result;article.append(original,result);q('#history').append(article);}}
 function stop(){stream?.getTracks().forEach(t=>t.stop());stream=null;q('#video').srcObject=null;q('#scan').disabled=true;q('#auto').checked=false;q('#auto').disabled=true;q('#stop').hidden=true;q('#share').hidden=false;q('#capturePreview').hidden=true;clearInterval(timer);timer=null;region=null;draw();}
@@ -42,5 +52,5 @@ async function scan(){if(scanBusy||busy||!stream)return;scanBusy=true;q('#scan')
  }catch(e){q('#auto').checked=false;status('Could not read the capture. '+e.message,true);}finally{scanBusy=false;q('#scan').disabled=!stream;}}
 q('#readTab').onclick=()=>mode('ko-en');q('#writeTab').onclick=()=>mode('en-ko');q('#translate').onclick=translate;q('#share').onclick=share;q('#stop').onclick=stop;q('#scan').onclick=scan;q('#resetArea').onclick=()=>{region=null;draw();};q('#input').addEventListener('input',changed);q('#input').addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();translate();}});
 q('#clear').onclick=()=>{resetWork();q('#input').value='';q('#auto').checked=false;history.length=0;renderHistory();changed();status('Cleared');};q('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(q('#output').textContent);status('Copied · paste it into game chat when ready');}catch{status('Could not copy. Select the translation and copy it manually.',true);}};
-addEventListener('pagehide',()=>{stop();worker?.terminate();ocr?.terminate();for(const engine of engines.values())engine.destroy?.();});
+addEventListener('pagehide',()=>{stop();finishPending(Error('Cancelled'));worker?.terminate();ocr?.terminate();for(const engine of engines.values())engine.destroy?.();});
 })();

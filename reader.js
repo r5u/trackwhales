@@ -262,7 +262,7 @@
           const job = dropReadQueue.shift(),
             wait = Math.max(
               0,
-              DROP_NOTICE_MIN_INTERVAL_MS - (Date.now() - lastDropReadAt),
+              (getCapture()?.pickupIntervalMs || DROP_NOTICE_MIN_INTERVAL_MS) - (Date.now() - lastDropReadAt),
             );
           if (wait)
             await new Promise((resolve) => setTimeout(resolve, wait));

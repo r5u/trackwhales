@@ -51,6 +51,7 @@
   } = {}) {
     const defaults = {
       samples: [],
+      expStartSample: null,
       mesoSamples: [],
       mesoStartAmount: null,
       mesoStatus: "Searching for the inventory balance automatically",
@@ -122,6 +123,17 @@
       if (sample.exp > required(sample.level) && sample.exp >= start)
         sample.exp -= start;
     }
+    // Preserve the initial reading beyond the rolling 240-frame chart buffer.
+    const firstSaved = state.samples?.slice().sort((a, b) => a.t - b.t)[0];
+    if (!state.expStartSample || !Number.isInteger(state.expStartSample.level) || !Number.isFinite(state.expStartSample.exp))
+      state.expStartSample = firstSaved ? { ...firstSaved } : null;
+    function expGain() {
+      const latest = samples().at(-1), first = state.expStartSample;
+      return latest && first ? Math.max(0, totalExp(latest) - totalExp(first)) : 0;
+    }
+    function expGainEstimated() {
+      return Boolean(state.expStartSample?.estimated || samples().at(-1)?.estimated);
+    }
     let inferredLevelPending = null,
       pendingLevel = null,
       pendingLevelFrame = null;
@@ -157,6 +169,7 @@
         exp,
         ...(reading.estimated ? { estimated: true, pct: reading.pct } : {}),
       });
+      if (!state.expStartSample) state.expStartSample = { ...state.samples.at(-1) };
       if (state.samples.length > 240) state.samples = state.samples.slice(-240);
       onChange();
       return true;
@@ -164,6 +177,7 @@
     function reset() {
       const t = now();
       state.samples = [];
+      state.expStartSample = null;
       state.mesoSamples = [];
       state.dropNotices = [];
       state.mesoStartAmount = null;
@@ -357,6 +371,8 @@
       state,
       key,
       samples,
+      expGain,
+      expGainEstimated,
       addMesoSample,
       addDropNotice,
       setMesoStatus,

@@ -1,8 +1,38 @@
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./potion-costs"), require("./map-sessions"));
-  else root.MapleDashboard = factory(root.MaplePotionCosts, root.MapleMapSessions);
-})(typeof window === "undefined" ? globalThis : window, function (PotionCosts, MapSessions) {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./potion-costs"), require("./map-sessions"), require("./quickslot-session"));
+  else root.MapleDashboard = factory(root.MaplePotionCosts, root.MapleMapSessions, root.MapleQuickslotSession);
+})(typeof window === "undefined" ? globalThis : window, function (PotionCosts, MapSessions, QuickslotSession) {
   "use strict";
+  function sessionPotionUsage(storage) {
+    const totals = {
+      hp: 0,
+      mp: 0,
+      both: 0,
+      restocked: 0,
+      configured: false,
+      observed: false,
+    };
+    if (!storage?.getItem || !Array.isArray(QuickslotSession?.STORE_KEYS))
+      return totals;
+    for (const key of QuickslotSession.STORE_KEYS) {
+      let saved;
+      try {
+        saved = JSON.parse(storage.getItem(key) || "null");
+      } catch {}
+      for (const item of Array.isArray(saved?.items) ? saved.items : []) {
+        const group = PotionCosts.catalog[item?.potionType]?.group;
+        if (!["hp", "mp", "both"].includes(group)) continue;
+        totals.configured = true;
+        if (Number.isInteger(item.count) && item.count >= 0)
+          totals.observed = true;
+        if (Number.isFinite(item.used) && item.used >= 0)
+          totals[group] += item.used;
+        if (Number.isFinite(item.restocked) && item.restocked >= 0)
+          totals.restocked += item.restocked;
+      }
+    }
+    return totals;
+  }
   function create({
     document,
     window,
@@ -51,7 +81,7 @@
       if (q("#mapName"))
         q("#mapName").textContent = state.mapName || "Waiting for capture";
       const gained =
-        old && latest ? Math.max(0, totalExp(latest) - totalExp(old)) : 0;
+        session.expGain();
       q("#gained").textContent = fmt(gained);
       q("#rate").textContent = rate ? fmt(rate) : "—";
       q("#pace").textContent = rate ? fmt(rate / 12) + " / 5m" : "—";
@@ -64,9 +94,10 @@
           q("#rate").textContent = "~" + fmt(rate);
           q("#pace").textContent = "~" + fmt(rate / 12) + " / 5m";
         }
-        if (gained) q("#gained").textContent = "~" + fmt(gained);
+        
         q("#rateHint").textContent = "Estimated from rounded HUD percentages";
       }
+      if (gained && session.expGainEstimated()) q("#gained").textContent = "~" + fmt(gained);
       const mesoSamples = MapSessions.samplesForVisit(
           (state.mesoSamples || []).filter((s) => Number.isSafeInteger(s.amount)),
           activeMapVisit,
@@ -99,11 +130,17 @@
         potionState = JSON.parse(storage?.getItem(PotionCosts.KEY) || "{}") || {};
       } catch {}
       const potionMetrics = PotionCosts.metrics(potionState, now),
+        potionUsage = sessionPotionUsage(storage),
+        useText = (value) => potionUsage.observed ? fmt(value) : "—",
         costText = (value) => value === null ? "—" : fmt(value),
         trackedGroups = new Set((potionState.items || []).map((item) => item?.group));
       if (q("#hpPotionCost")) q("#hpPotionCost").textContent = costText(potionMetrics.hp);
       if (q("#mpPotionCost")) q("#mpPotionCost").textContent = costText(potionMetrics.mp);
       if (q("#bothPotionCost")) q("#bothPotionCost").textContent = costText(potionMetrics.both);
+      if (q("#hpPotsUsed")) q("#hpPotsUsed").textContent = useText(potionUsage.hp);
+      if (q("#mpPotsUsed")) q("#mpPotsUsed").textContent = useText(potionUsage.mp);
+      if (q("#bothPotsUsed")) q("#bothPotsUsed").textContent = useText(potionUsage.both);
+      if (q("#potsRestocked")) q("#potsRestocked").textContent = useText(potionUsage.restocked);
       let estimatedGrossMesoRate = null;
       if (
         mesoRate !== null && activeMapVisit && now - activeMapVisit.start >= 300000 &&
@@ -129,7 +166,7 @@
       renderDropNotices(now);
       const lvl = state.level,
         req = lvl ? required(lvl) : 0,
-        expIn = latest ? latest.exp || 0 : 0,
+        expIn = allSamples.at(-1)?.exp || 0,
         pct = req ? Math.max(0, Math.min(100, (expIn / req) * 100)) : 0;
       q("#progressFill").style.width = pct + "%";
       q("#percent").textContent = pct.toFixed(2) + "% to next level";
@@ -187,7 +224,7 @@
         );
       }
       q("#sampleCount").textContent =
-        ss.length + " sample" + (ss.length === 1 ? "" : "s");
+        allSamples.length + " sample" + (allSamples.length === 1 ? "" : "s");
       q("#liveState").textContent = state.paused
         ? "PAUSED"
         : state.running
@@ -214,7 +251,7 @@
             second: "2-digit",
           })
         : "NO CAPTURE YET";
-      draw(ss);
+      draw(allSamples);
       drawLog(ss);
       updateRateHint(ss);
       save();
@@ -769,5 +806,5 @@
       isAutomatic: () => q("#autoOcr").checked,
     };
   }
-  return { create };
+  return { create, sessionPotionUsage };
 });

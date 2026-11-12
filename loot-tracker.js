@@ -34,6 +34,8 @@ window.TrackwhalesLoot={isAutomatic:()=>data.autoDetect,addInventory(name,quanti
 }};
 document.addEventListener('DOMContentLoaded',()=>{
  if(!q('lootForm'))return;
+ const timing=q('lootPickupRate');
+ if(timing){timing.value=String(window.TrackwhalesExperience?.pickupRate||1000);timing.addEventListener('change',()=>window.TrackwhalesExperience?.setPickupRate(Number(timing.value)));}
  const auto=q('lootAutoDetect');
  function showMode(){auto.checked=data.autoDetect;q('lootManual').hidden=data.autoDetect;q('lootModeStatus').textContent=data.autoDetect?'Pickup names, quantities and NPC prices are added automatically.':'Manual mode · add the items you want to value below.';}
  auto.addEventListener('change',()=>{data.autoDetect=auto.checked;if(data.autoDetect)data.autoSince=Date.now();save();showMode();});showMode();

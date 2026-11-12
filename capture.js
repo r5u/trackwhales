@@ -19,7 +19,7 @@
     now = Date.now,
     timers = { setTimeout, setInterval, clearInterval },
   }) {
-    let refreshMs = 10000, pickupMs = 100;
+    let refreshMs = 10000, pickupMs = 1000;
     const FULL_SCAN_INTERVAL_MS = 10000,
       MAP_HEADER_POLL_INTERVAL_MS = 2000,
       DROP_FEED_POLL_INTERVAL_MS = 1000,
@@ -458,8 +458,13 @@
     }
     function setRefreshRate(ms,pickup) {
       if (![1000,2000,5000,10000,20000].includes(ms)) return;
-      refreshMs=ms; pickupMs=Math.max(1000,Math.min(ms,pickup || ms));
+      refreshMs=ms;
+      if ([250,500,1000,2000,5000,10000].includes(pickup)) pickupMs=pickup;
       restartTimers();
+    }
+    function setPickupRefreshRate(ms) {
+      if (![250,500,1000,2000,5000,10000].includes(ms)) return;
+      pickupMs=ms; restartTimers();
     }
     function togglePause() {
       if (!stream) return;
@@ -478,6 +483,8 @@
     return {
       connect,
       setRefreshRate,
+      setPickupRefreshRate,
+      get pickupIntervalMs(){return pickupMs;},
       get refreshIntervalMs(){return refreshMs;},
       stop,
       captureFrame,

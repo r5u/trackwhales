@@ -49,6 +49,7 @@ Assign potion types to detected quickslots, enable count tracking, rescan slots,
 
 ### Mob drops & NPC value
 
+- **Experimental:** review automatic results. A separate pickup OCR timing selector offers 0.25, 0.5, 1, 2, 5, or 10 seconds; faster checks use more CPU. OCR reads never overlap. This setting is independent of the main EXP OCR rate.
 - **Automatic pickup detection** adds recognized names and quantities from pickup notifications.
 - Recognized gold-highlighted inventory stacks provide another detection path. A confirmed first count establishes a baseline; later count increases add drops. Unchanged or decreasing counts do not add drops.
 - Automatic/manual mode is optional. Turn automatic detection off to enter item names, quantities, and prices yourself.
@@ -70,7 +71,7 @@ Browse and search these ten categories:
 | Items | Base stats, class requirements, NPC sell values, effects, scroll bonuses, related quests and recipes |
 | Monsters | Level, HP/MP, EXP, defenses, elements, animations, spawn maps, and community drop lookup |
 | Skills | Class, requirements, descriptions, and a per-rank slider with rank-specific values |
-| Maps | Minimap, full-map image, monsters and spawn points, NPCs, connected maps, portals, and training suggestions |
+| Maps | Minimap, full-map image, monsters and spawn points, NPCs, connected maps, and portals |
 | Quests | Quest giver, requirements, rewards, reward choices, next quest, and chain links |
 | NPCs | Locations and related quests |
 | Crafting | Discipline, required rank, output, ingredients, costs, and crafting EXP |
@@ -82,11 +83,11 @@ Use category filters, sorting, **Search all**, **Show more**, and linked records
 
 ### Find training maps
 
-In **Maps**, enter **Your level** or click **Use tracked level**, then choose **Solo** or **6-person party**. Open a suggestion to inspect its map and monsters; **More suggestions** expands the list.
+Open **Find a training map** in the dashboard tools. Enter **Your level** or use the tracked level, choose your class and actual attack element, then select **Solo** or **6-person party**. Browse up to 60 suggestions with **More maps**. Expand a result for monster stats, elemental weaknesses/resistances, and a minimap.
 
-Rankings estimate suitability from monster level, EXP relative to HP, and client spawn points. Solo favors monsters near or slightly below your level. Party mode assumes six active players of similar level and favors denser maps with somewhat stronger monsters. Towns, bosses, invincible monsters, special instances, and identified unreleased/test areas are excluded from recommendations.
+Rankings estimate suitability from monster level, EXP relative to HP, client spawn points, and selected elemental affinity. Class presets select an initial attack element; they do not assume gear or damage. Solo favors monsters near or slightly below your level. Party mode assumes six active players of similar level and favors denser maps with somewhat stronger monsters. Towns, bosses, invincible monsters, special instances, and identified unreleased/test areas are excluded from recommendations.
 
-These are **not measured EXP/hour or guaranteed optimal routes**. Class, damage, accuracy, movement, buffs, party bonuses, map layout, and server respawns can change actual results. Spawn points are not a live monster count.
+These are **not measured EXP/hour or guaranteed optimal routes**. Damage, accuracy, movement, buffs, party bonuses, map layout, and server respawns can change actual results. Spawn points are not a live monster count.
 
 The bundled database snapshot is dated October 29, 2026. Client records do not prove live availability. Server drop tables are not included; the community lookup opens a separate wiki search.
 
@@ -100,7 +101,7 @@ The bundled database snapshot is dated October 29, 2026. Client records do not p
 - Number, percentage, and currency checks reject translations that change those values.
 - Copying is explicit. The translator does not type, paste, or send messages to the game.
 
-Text and capture recognition run locally. First use may download language/OCR models. Supported browsers use their built-in local translator; the browser fallback model is roughly 600 MB. Review translations against the visible original. Model/runtime sources and terms are listed in [translator credits](https://r5u.github.io/trackwhales/translator-credits.html).
+Text and capture recognition run locally. First use may download language/OCR models. Supported browsers use their built-in local translator; the Korean-to-English fallback is about 120 MB, and English-to-Korean is about 600 MB. Loading shows download progress, can be cancelled, and stalled loads stop with a retryable error. Review translations against the visible original. Model/runtime sources and terms are listed in [translator credits](https://r5u.github.io/trackwhales/translator-credits.html).
 
 ## OCR refresh rate
 

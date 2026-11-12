@@ -27,6 +27,15 @@
     }
    }
   }else{
+   const compact=text.replace(/\s+/g,'');
+   const parties=data.readPARTIES||{},people=data.readPEOPLE||{};
+   for(const [term,name] of Object.entries(parties).sort((a,b)=>b[0].length-a[0].length)){
+    if(!compact.startsWith(term))continue;
+    const rest=compact.slice(term.length);
+    const count=rest.match(/^([0-9]{1,3}|한|두|세|네|다섯|여섯)(?:명|분)(?:구함|구해요|구합니다|모집합니다|모집)[!.]*$/);
+    if(count)return 'Looking for '+(people[count[1]]||count[1])+' '+(['한','1'].includes(count[1])?'person':'people')+' for '+name;
+    if(/^(?:(?:팟|파티)(?:점여|점요|좀여|좀요|주세요|부탁해요)|초대(?:점여|점요|좀여|좀요|좀|해주세요|부탁해요))[!?.]*$/.test(rest))return 'Please invite me to the '+name+(name.endsWith('party')?'':' party');
+   }
    const exact={안녕하세요:'hello',안녕:'hello',감사합니다:'thank you',고마워요:'thank you',죄송합니다:'sorry',미안해요:'sorry',자리요:'this spot is taken',팟점여:'please invite me',팟좀요:'please invite me',초대점여:'please invite me',초대좀요:'please invite me',파티구합니다:'looking for a party'};
    if(exact[text.replace(/[\s.!?]/g,'')])return exact[text.replace(/[\s.!?]/g,'')];
   }
