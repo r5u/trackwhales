@@ -25,7 +25,7 @@ function open(type,key,remember=true){const row=get(type,key);if(!row){q('#statu
  if(row.price!==undefined)basic[type==='cash_shop'?'Client NX price (not current shop pricing)':'price']=row.price;
  facts(parent,basic);facts(parent,row.stats,'Stats');facts(parent,row.spec,'Item effects · duration is milliseconds');facts(parent,row.weapon,'Weapon');facts(parent,row.scroll,'Scroll');if(row.scroll?.stats)facts(parent,row.scroll.stats,'Scroll bonuses');facts(parent,row.elements,'Element resistances');if(row.req_classes)facts(parent,{req_classes:row.req_classes},'Equipment requirements');
  if(type==='maps'){
-  parent.append(window.TrackwhalesMapPreview.create(row,{maps:data.maps,monsters:data.monsters,onNavigate:id=>open('maps',id)}));
+  const preview=window.TrackwhalesMapPreview.create(row,{maps:data.maps,monsters:data.monsters,onNavigate:id=>open('maps',id)});parent.insertBefore(preview,parent.querySelector('.facts'));
   const grouped=new Map();for(const mob of row.mobs||[])grouped.set(mob.mob_id,(grouped.get(mob.mob_id)||0)+1);if(grouped.size){parent.append(element('h2','Monsters · client spawn points'));const list=element('div',undefined,'relations');for(const [key,count] of grouped)list.append(linkButton('monsters',key,' · '+count+' points'));parent.append(list);}
   relation(parent,'NPCs','npcs',(row.npcs||[]).map(n=>n.npc_id));relation(parent,'Connected maps','maps',row.exits);if(row.return_map_id!==undefined)relation(parent,'Return map','maps',[row.return_map_id]);rawBlock(parent,'Portals & coordinates',row.portals);
  }
